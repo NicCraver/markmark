@@ -24,7 +24,10 @@ let package = Package(
             dependencies: [
                 .product(name: "Textual", package: "textual")
             ],
-            path: "Sources/MarkdownReader"
+            path: "Sources/MarkdownReader",
+            resources: [
+                .process("Assets.xcassets")
+            ]
         )
     ]
 )

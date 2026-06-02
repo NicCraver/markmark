@@ -5,6 +5,7 @@ struct ProjectStatusView: View {
     @Bindable var gitViewModel: GitViewModel
     let appViewModel: AppViewModel
     @Environment(\.language) private var language
+    @Environment(\.themeColors) private var themeColors
 
     /// 是否展开变更文件列表
     @State private var isExpanded: Bool = false
@@ -14,7 +15,7 @@ struct ProjectStatusView: View {
             // 成功消息 toast
             successToast
 
-            Divider()
+            Rectangle().fill(themeColors.border).frame(height: 1)
 
             // 主状态栏
             statusBar
@@ -29,11 +30,11 @@ struct ProjectStatusView: View {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 13))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(themeColors.success)
 
                 Text(message)
                     .font(.system(size: 12))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(themeColors.ink)
 
                 Spacer()
 
@@ -42,13 +43,13 @@ struct ProjectStatusView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(themeColors.fgSecondary)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.green.opacity(0.08))
+            .background(themeColors.success.opacity(0.08))
             .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
@@ -78,7 +79,7 @@ struct ProjectStatusView: View {
                 changeFileList
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(themeColors.bgElevated)
     }
 
     // MARK: - 分支标识
@@ -90,7 +91,7 @@ struct ProjectStatusView: View {
             Text(gitViewModel.branchName)
                 .font(.system(size: 12, weight: .medium))
         }
-        .foregroundStyle(.secondary)
+        .foregroundStyle(themeColors.fgSecondary)
     }
 
     // MARK: - 变更计数
@@ -111,7 +112,7 @@ struct ProjectStatusView: View {
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                             .font(.system(size: 9))
                     }
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(themeColors.accent)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -121,7 +122,7 @@ struct ProjectStatusView: View {
                     Text(L10n.tr(.gitNoChanges, language: language))
                         .font(.system(size: 12))
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(themeColors.fgSecondary)
             }
         }
     }
@@ -165,7 +166,7 @@ struct ProjectStatusView: View {
 
     private var changeFileList: some View {
         VStack(spacing: 0) {
-            Divider()
+            Rectangle().fill(themeColors.border).frame(height: 1)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
@@ -192,11 +193,11 @@ struct ProjectStatusView: View {
                             HStack(spacing: 6) {
                                 Text("?")
                                     .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(themeColors.fgMuted)
                                     .frame(width: 14)
                                 Text(URL(fileURLWithPath: path).lastPathComponent)
                                     .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(themeColors.fgSecondary)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                                 Spacer()
@@ -218,10 +219,10 @@ struct ProjectStatusView: View {
         HStack(spacing: 4) {
             Text(title)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(themeColors.fgMuted)
             Text("(\(count))")
                 .font(.system(size: 10))
-                .foregroundStyle(.quaternary)
+                .foregroundStyle(themeColors.fgMuted)
             Spacer()
         }
         .padding(.horizontal, 12)
@@ -237,7 +238,7 @@ struct ProjectStatusView: View {
                 .frame(width: 14)
             Text(URL(fileURLWithPath: change.path).lastPathComponent)
                 .font(.system(size: 11))
-                .foregroundStyle(.primary)
+                .foregroundStyle(themeColors.ink)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()
@@ -249,13 +250,13 @@ struct ProjectStatusView: View {
 
     private func statusColor(_ status: GitService.ChangeStatus) -> Color {
         switch status {
-        case .added: return .green
-        case .modified: return .orange
-        case .deleted: return .red
-        case .renamed: return .blue
-        case .copied: return .blue
-        case .unmerged: return .purple
-        case .unknown: return .secondary
+        case .added: return themeColors.success
+        case .modified: return themeColors.accent
+        case .deleted: return themeColors.danger
+        case .renamed: return themeColors.accent
+        case .copied: return themeColors.accent
+        case .unmerged: return themeColors.danger
+        case .unknown: return themeColors.fgSecondary
         }
     }
 }

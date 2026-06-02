@@ -13,6 +13,10 @@ enum L10n {
         // 应用名称
         case appName
 
+        // 设置 - 菜单/导航
+        case settingsMenuLabel
+        case settingsBackToApp
+
         // 设置 - 标签页
         case settingsTabGeneral
         case settingsTabAppearance
@@ -74,7 +78,7 @@ enum L10n {
 
         // 显示模式
         case displayModeRendered
-        case displayModeSource
+        case displayModeRaw
 
         // 通用操作
         case open
@@ -84,11 +88,17 @@ enum L10n {
         case titleBarToggleSidebar
         case titleBarDisplayMode
         case titleBarOpen
+        case titleBarToggleOutline
+
+        // 大纲
+        case outlineTitle
+        case outlineEmpty
 
         // 侧边栏
         case loading
         case emptyDirectoryMessage
         case sidebarSettings
+        case sidebarSettingsButton
 
         // 欢迎页
         case welcomeOpenFolder
@@ -109,6 +119,8 @@ enum L10n {
 
     private static let en: [Key: String] = [
         .appName: "Markdown Reader",
+        .settingsMenuLabel: "Settings\u{2026}",
+        .settingsBackToApp: "Back to App",
         .settingsTabGeneral: "General",
         .settingsTabAppearance: "Appearance",
         .settingsGeneralLanguageTitle: "Language",
@@ -149,15 +161,19 @@ enum L10n {
         .languageZhTW: "Traditional Chinese",
         .languageEn: "English",
         .displayModeRendered: "Rendered",
-        .displayModeSource: "Source",
+        .displayModeRaw: "Raw",
         .open: "Open",
         .reset: "Reset",
         .titleBarToggleSidebar: "Toggle Sidebar (⌘\\)",
         .titleBarDisplayMode: "Display Mode",
         .titleBarOpen: "Open (⌘O)",
+        .titleBarToggleOutline: "Toggle Outline",
+        .outlineTitle: "Outline",
+        .outlineEmpty: "No headings",
         .loading: "Loading...",
         .emptyDirectoryMessage: "No Markdown files in this directory",
         .sidebarSettings: "Settings (⌘,)",
+        .sidebarSettingsButton: "Settings",
         .welcomeOpenFolder: "Open a folder to get started",
         .welcomePressCmdO: "Press Cmd+O or click Open in toolbar",
         .gitChangesCount: "{n} changes",
@@ -172,6 +188,8 @@ enum L10n {
 
     private static let zhCN: [Key: String] = [
         .appName: "Markdown Reader",
+        .settingsMenuLabel: "设置\u{2026}",
+        .settingsBackToApp: "返回应用",
         .settingsTabGeneral: "通用",
         .settingsTabAppearance: "外观",
         .settingsGeneralLanguageTitle: "界面语言",
@@ -212,15 +230,19 @@ enum L10n {
         .languageZhTW: "繁體中文",
         .languageEn: "English",
         .displayModeRendered: "渲染",
-        .displayModeSource: "源码",
+        .displayModeRaw: "原始",
         .open: "打开",
         .reset: "重置",
         .titleBarToggleSidebar: "切换侧边栏 (⌘\\)",
         .titleBarDisplayMode: "显示模式",
         .titleBarOpen: "打开 (⌘O)",
+        .titleBarToggleOutline: "切换大纲",
+        .outlineTitle: "大纲",
+        .outlineEmpty: "暂无标题",
         .loading: "加载中...",
         .emptyDirectoryMessage: "该目录下无 Markdown 文件",
         .sidebarSettings: "设置 (⌘,)",
+        .sidebarSettingsButton: "设置",
         .welcomeOpenFolder: "打开文件夹开始阅读",
         .welcomePressCmdO: "按 Cmd+O 或点击工具栏中的打开按钮",
         .gitChangesCount: "{n} 个变更",
@@ -235,6 +257,8 @@ enum L10n {
 
     private static let zhTW: [Key: String] = [
         .appName: "Markdown Reader",
+        .settingsMenuLabel: "設定\u{2026}",
+        .settingsBackToApp: "返回應用",
         .settingsTabGeneral: "一般",
         .settingsTabAppearance: "外觀",
         .settingsGeneralLanguageTitle: "介面語言",
@@ -275,15 +299,19 @@ enum L10n {
         .languageZhTW: "繁體中文",
         .languageEn: "English",
         .displayModeRendered: "渲染",
-        .displayModeSource: "原始碼",
+        .displayModeRaw: "原始",
         .open: "開啟",
         .reset: "重設",
         .titleBarToggleSidebar: "切換側邊欄 (⌘\\)",
         .titleBarDisplayMode: "顯示模式",
         .titleBarOpen: "開啟 (⌘O)",
+        .titleBarToggleOutline: "切換大綱",
+        .outlineTitle: "大綱",
+        .outlineEmpty: "暫無標題",
         .loading: "載入中...",
         .emptyDirectoryMessage: "此目錄下無 Markdown 檔案",
         .sidebarSettings: "設定 (⌘,)",
+        .sidebarSettingsButton: "設定",
         .welcomeOpenFolder: "開啟資料夾開始閱讀",
         .welcomePressCmdO: "按 Cmd+O 或點擊工具列中的開啟按鈕",
         .gitChangesCount: "{n} 個變更",

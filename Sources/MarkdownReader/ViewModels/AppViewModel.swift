@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// 设置标签页，供 AppViewModel 和 ContentView 使用
+enum SettingsTab: String, CaseIterable {
+    case general
+    case appearance
+}
+
 /// 全局应用状态，管理窗口级别的状态
 @MainActor
 @Observable
@@ -43,6 +49,31 @@ final class AppViewModel {
     /// Sidebar 自动隐藏阈值
     static let sidebarHideThreshold: CGFloat = 140
 
+    // MARK: - 大纲状态
+
+    /// 大纲侧边栏是否可见
+    var isOutlineVisible: Bool = false
+
+    /// 大纲侧边栏宽度
+    var outlineWidth: CGFloat = 200
+
+    /// 大纲侧边栏默认宽度
+    static let defaultOutlineWidth: CGFloat = 200
+
+    /// 大纲侧边栏最小宽度
+    static let minOutlineWidth: CGFloat = 150
+
+    /// 大纲侧边栏最大宽度
+    static let maxOutlineWidth: CGFloat = 350
+
+    // MARK: - 设置状态
+
+    /// 是否显示设置界面（窗口内状态切换，而非弹窗）
+    var isShowingSettings: Bool = false
+
+    /// 设置界面的当前标签页
+    var settingsTab: SettingsTab = .general
+
     // MARK: - 窗口标题
 
     /// 窗口标题
@@ -53,11 +84,6 @@ final class AppViewModel {
     /// 是否处于全屏模式
     var isFullScreen: Bool = false
 
-    /// 红绿灯占位宽度
-    var trafficLightWidth: CGFloat {
-        isFullScreen ? 32 : 76
-    }
-
     // MARK: - 方法
 
     /// 切换 Sidebar 显隐
@@ -67,6 +93,40 @@ final class AppViewModel {
             if isSidebarVisible {
                 sidebarWidth = Self.defaultSidebarWidth
             }
+        }
+    }
+
+    /// 切换大纲侧边栏显隐
+    func toggleOutline() {
+        withAnimation(.spring(duration: 0.25)) {
+            isOutlineVisible.toggle()
+            if isOutlineVisible {
+                outlineWidth = Self.defaultOutlineWidth
+            }
+        }
+    }
+
+    /// 进入设置界面
+    func showSettings(tab: SettingsTab = .general) {
+        settingsTab = tab
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isShowingSettings = true
+        }
+    }
+
+    /// 退出设置界面
+    func hideSettings() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isShowingSettings = false
+        }
+    }
+
+    /// 切换设置界面（Cmd+, 快捷键使用）
+    func toggleSettings() {
+        if isShowingSettings {
+            hideSettings()
+        } else {
+            showSettings()
         }
     }
 
@@ -86,6 +146,16 @@ final class AppViewModel {
             // 限制宽度范围
             sidebarWidth = max(Self.minSidebarWidth, min(Self.maxSidebarWidth, sidebarWidth))
         }
+    }
+
+    /// 更新大纲侧边栏宽度（拖拽时调用）
+    func updateOutlineWidth(_ width: CGFloat) {
+        outlineWidth = width
+    }
+
+    /// 处理大纲侧边栏拖拽结束，限制宽度范围
+    func handleOutlineDragEnded() {
+        outlineWidth = max(Self.minOutlineWidth, min(Self.maxOutlineWidth, outlineWidth))
     }
 
     /// 打开目录

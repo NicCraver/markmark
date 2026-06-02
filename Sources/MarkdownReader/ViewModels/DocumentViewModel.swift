@@ -33,6 +33,9 @@ final class DocumentViewModel {
         currentFileURL != nil && fileError == nil
     }
 
+    /// 当前文档的大纲项
+    var outlineItems: [OutlineItem] = []
+
     // MARK: - 依赖
 
     private let fileService: FileService
@@ -65,6 +68,7 @@ final class DocumentViewModel {
             content = ""
             currentFileURL = url
             fileName = url.lastPathComponent
+            outlineItems = []
             return
         }
 
@@ -75,16 +79,19 @@ final class DocumentViewModel {
             content = try await fileService.readFile(at: url)
             currentFileURL = url
             fileName = url.lastPathComponent
+            outlineItems = OutlineService.parse(content)
         } catch let fileError as FileError {
             self.fileError = fileError
             content = ""
             currentFileURL = url
             fileName = url.lastPathComponent
+            outlineItems = []
         } catch {
             self.fileError = .unknown(error)
             content = ""
             currentFileURL = url
             fileName = url.lastPathComponent
+            outlineItems = []
         }
 
         isLoading = false
@@ -98,6 +105,7 @@ final class DocumentViewModel {
             currentFileURL = node.path
             fileName = node.name
             content = ""
+            outlineItems = []
             return
         }
         await loadFile(at: node.path)
@@ -117,5 +125,6 @@ final class DocumentViewModel {
         isLoading = false
         isFirstFile = true
         displayMode = settings.defaultDisplayMode
+        outlineItems = []
     }
 }

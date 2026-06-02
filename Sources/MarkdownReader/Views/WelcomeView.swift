@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct WelcomeView: View {
     let appViewModel: AppViewModel
     @Environment(\.language) private var language
+    @Environment(\.themeColors) private var themeColors
 
     var body: some View {
         VStack(spacing: 16) {
@@ -12,15 +13,15 @@ struct WelcomeView: View {
 
             Image(systemName: "folder")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(themeColors.fgMuted)
 
             Text(L10n.tr(.welcomeOpenFolder, language: language))
                 .font(.title2)
-                .foregroundStyle(.primary)
+                .foregroundStyle(themeColors.ink)
 
             Text(L10n.tr(.welcomePressCmdO, language: language))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(themeColors.fgSecondary)
 
             Button(L10n.tr(.open, language: language)) {
                 openPanel()

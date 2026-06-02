@@ -1,122 +1,14 @@
 import SwiftUI
 
-// MARK: - 设置窗口主视图
+// MARK: - 设置视图组件
 
-/// 设置窗口，左侧 Sidebar 显示菜单（通用/外观），右侧显示对应设置内容
+/// 设置视图的内容组件，由 ContentView 在设置模式下使用
+/// 包含通用设置和外观设置两个子视图
 /// 参照 buddy-macos SettingsContent 的布局
-struct SettingsView: View {
-    @State private var settings = SettingsModel.shared
-    @State private var selectedTab: SettingsTab = .general
-
-    private var currentLanguage: Language {
-        settings.languagePref.resolvedLanguage
-    }
-
-    var body: some View {
-        HStack(spacing: 0) {
-            // 左侧菜单
-            settingsSidebar
-
-            // 分隔线
-            Divider()
-
-            // 右侧内容
-            settingsContent
-        }
-        .frame(width: 720, height: 520)
-    }
-
-    // MARK: - 左侧菜单
-
-    private var settingsSidebar: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // 标题
-            Text(L10n.tr(.settingsTabGeneral, language: currentLanguage))
-                .font(.headline)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 16)
-                .padding(.top, 20)
-                .padding(.bottom, 12)
-
-            // 菜单项
-            SettingsMenuItem(
-                title: L10n.tr(.settingsTabGeneral, language: currentLanguage),
-                icon: "gearshape",
-                isSelected: selectedTab == .general
-            ) {
-                selectedTab = .general
-            }
-
-            SettingsMenuItem(
-                title: L10n.tr(.settingsTabAppearance, language: currentLanguage),
-                icon: "paintbrush",
-                isSelected: selectedTab == .appearance
-            ) {
-                selectedTab = .appearance
-            }
-
-            Spacer()
-        }
-        .frame(width: 170)
-        .background(Color(nsColor: .controlBackgroundColor))
-    }
-
-    // MARK: - 右侧内容
-
-    @ViewBuilder
-    private var settingsContent: some View {
-        ScrollView {
-            switch selectedTab {
-            case .general:
-                GeneralSettingsView(settings: settings, language: currentLanguage)
-            case .appearance:
-                AppearanceSettingsView(settings: settings, language: currentLanguage)
-            }
-        }
-        .scrollContentBackground(.hidden)
-    }
-}
-
-// MARK: - 菜单项视图
-
-private struct SettingsMenuItem: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .frame(width: 18)
-                Text(title)
-                    .font(.system(size: 13))
-            }
-            .foregroundStyle(isSelected ? .primary : .secondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
-    }
-}
-
-// MARK: - Settings Tab 枚举
-
-private enum SettingsTab {
-    case general
-    case appearance
-}
 
 // MARK: - 通用设置视图
 
-private struct GeneralSettingsView: View {
+struct GeneralSettingsView: View {
     @Bindable var settings: SettingsModel
     let language: Language
 
@@ -154,7 +46,7 @@ private struct GeneralSettingsView: View {
             ) {
                 Picker("", selection: $settings.defaultDisplayMode) {
                     Text(L10n.tr(.displayModeRendered, language: language)).tag(DisplayMode.rendered)
-                    Text(L10n.tr(.displayModeSource, language: language)).tag(DisplayMode.source)
+                    Text(L10n.tr(.displayModeRaw, language: language)).tag(DisplayMode.raw)
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 200)
@@ -186,9 +78,10 @@ private struct GeneralSettingsView: View {
 // MARK: - 外观设置视图
 
 /// 参照 buddy-macos AppearanceSettings，包含主题模式、配色方案、自定义颜色、对比度
-private struct AppearanceSettingsView: View {
+struct AppearanceSettingsView: View {
     @Bindable var settings: SettingsModel
     let language: Language
+    @Environment(\.themeColors) private var themeColors
 
     /// 当前可用配色方案列表（根据解析后的主题类型动态变化）
     private var availableSchemes: [ThemeDefinition] {
@@ -271,9 +164,7 @@ private struct AppearanceSettingsView: View {
             title: L10n.tr(.settingsAppearanceSchemeTitle, language: language),
             description: L10n.tr(.settingsAppearanceSchemeDesc, language: language)
         ) {
-            LazyVGrid(columns: [
-                GridItem(.adaptive(minimum: 70, maximum: 90), spacing: 8)
-            ], spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
                 ForEach(availableSchemes) { theme in
                     ColorSchemeCard(
                         theme: theme,
@@ -353,15 +244,15 @@ private struct AppearanceSettingsView: View {
                 HStack {
                     Text(L10n.tr(.settingsAppearanceContrastLow, language: language))
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(themeColors.fgMuted)
                     Spacer()
                     Text("\(currentContrast)")
                         .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(themeColors.fgSecondary)
                     Spacer()
                     Text(L10n.tr(.settingsAppearanceContrastHigh, language: language))
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(themeColors.fgMuted)
                 }
             }
         }
@@ -421,56 +312,61 @@ private struct ThemeModeCard: View {
     let isSelected: Bool
     let language: Language
     let action: () -> Void
+    @Environment(\.themeColors) private var themeColors
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                ZStack(alignment: .topTrailing) {
-                    // 图标区域
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                        .frame(height: 50)
-                        .overlay {
-                            Image(systemName: icon)
-                                .font(.system(size: 20))
-                                .foregroundStyle(.secondary)
-                        }
+            ZStack(alignment: .topTrailing) {
+                // 卡片内容：2 行布局
+                VStack(alignment: .leading, spacing: 4) {
+                    // Row 1: 图标 + 标题横排
+                    HStack(spacing: 6) {
+                        Image(systemName: icon)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(isSelected ? themeColors.accent : themeColors.fgSecondary)
+                        Text(title)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(themeColors.ink)
+                        Spacer()
+                    }
 
-                    // 选中指示器
-                    Circle()
-                        .fill(isSelected ? Color.accentColor : Color.clear)
-                        .frame(width: 10, height: 10)
-                        .overlay {
-                            Circle()
-                                .strokeBorder(isSelected ? Color.clear : Color(nsColor: .separatorColor), lineWidth: 1.5)
-                                .frame(width: 10, height: 10)
-                        }
-                        .padding(6)
-                }
-
-                VStack(spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.primary)
+                    // Row 2: 描述
                     Text(description)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(themeColors.fgMuted)
                         .lineLimit(2)
-                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(16)
+
+                // 右上角选中指示器
+                Circle()
+                    .fill(isSelected ? themeColors.accent : Color.clear)
+                    .frame(width: 12, height: 12)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(isSelected ? Color.clear : themeColors.border, lineWidth: 1.5)
+                            .frame(width: 12, height: 12)
+                    }
+                    .padding(8)
             }
-            .padding(10)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isSelected ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isSelected ? 2 : 1)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(themeColors.surface)
             )
             .overlay {
+                // 选中态：accent 描边 + 软底色双层强调
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(isSelected ? themeColors.accent : themeColors.border, lineWidth: isSelected ? 2 : 1)
+            }
+            .overlay {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(themeColors.accent.opacity(0.3), lineWidth: 3)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
     }
@@ -483,59 +379,82 @@ private struct ColorSchemeCard: View {
     let isSelected: Bool
     let language: Language
     let action: () -> Void
+    @Environment(\.themeColors) private var themeColors
 
     /// 安全解析 hex 颜色
     private var surfaceColor: Color {
         Color(hex: theme.surface) ?? Color(nsColor: .controlBackgroundColor)
     }
     private var accentColor: Color {
-        Color(hex: theme.accent) ?? .accentColor
+        Color(hex: theme.accent) ?? themeColors.accent
     }
     private var inkColor: Color {
-        Color(hex: theme.ink) ?? .primary
+        Color(hex: theme.ink) ?? themeColors.ink
     }
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
+            VStack(spacing: 0) {
                 ZStack(alignment: .topTrailing) {
-                    // 迷你预览：主题 surface 背景 + accent 圆点 + ink 线条
+                    // 迷你预览条：accent 圆点 + ink 线条（卡片背景已是 surfaceColor，无需再填充）
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(surfaceColor)
-                        .frame(height: 36)
+                        .fill(surfaceColor.opacity(0.5))
+                        .frame(height: 24)
                         .overlay {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 3) {
                                 Circle()
                                     .fill(accentColor)
-                                    .frame(width: 8, height: 8)
+                                    .frame(width: 6, height: 6)
                                 RoundedRectangle(cornerRadius: 1)
                                     .fill(inkColor.opacity(0.5))
-                                    .frame(width: 24, height: 3)
+                                    .frame(width: 18, height: 2)
                             }
+                            .padding(.leading, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(.horizontal, 4)
+                        .padding(.top, 4)
 
                     // 选中指示器
-                    Circle()
-                        .fill(isSelected ? Color.accentColor : Color.clear)
-                        .frame(width: 8, height: 8)
-                        .overlay {
-                            Circle()
-                                .strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.2), lineWidth: 1)
-                                .frame(width: 8, height: 8)
-                        }
-                        .padding(4)
+                    if isSelected {
+                        Circle()
+                            .fill(themeColors.accent)
+                            .frame(width: 8, height: 8)
+                            .overlay {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 5, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(4)
+                    }
                 }
 
+                // 主题名称（使用主题自身的 ink 色）
                 Text(theme.name)
                     .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(inkColor)
                     .lineLimit(1)
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(6)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(isSelected ? Color.accentColor : Color(nsColor: .separatorColor), lineWidth: isSelected ? 1.5 : 0.5)
+                    .fill(surfaceColor)
             )
+            .overlay {
+                // 选中态：accent 描边 + 软底色双层强调
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(isSelected ? themeColors.accent : themeColors.border, lineWidth: isSelected ? 2 : 0.5)
+            }
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(themeColors.accent.opacity(0.15))
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
         }
         .buttonStyle(.plain)
     }
@@ -549,44 +468,56 @@ private struct ColorBarRow: View {
     let isCustom: Bool
     let onColorChange: (String) -> Void
     let onReset: () -> Void
+    @Environment(\.themeColors) private var themeColors
 
-    @State private var showColorPicker = false
     @State private var isEditingHex = false
     @State private var editHexText = ""
+    @State private var pickerColor: Color = .gray
+    @State private var isPickerActive = false
 
     var body: some View {
         HStack(spacing: 10) {
-            // 颜色色块按钮
+            // 颜色色块按钮：直接打开 NSColorPanel
             Button {
-                showColorPicker = true
+                pickerColor = Color(hex: hexValue) ?? .gray
+                isPickerActive = true
+                openNativeColorPanel()
             } label: {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color(hex: hexValue) ?? .gray)
                     .frame(width: 24, height: 24)
                     .overlay {
                         RoundedRectangle(cornerRadius: 4)
-                            .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5)
+                            .strokeBorder(themeColors.ink.opacity(0.15), lineWidth: 0.5)
                     }
             }
             .buttonStyle(.plain)
-            .popover(isPresented: $showColorPicker) {
-                ColorPickerPopover(
-                    hexValue: hexValue,
-                    onChange: { newHex in
-                        onColorChange(newHex)
-                        showColorPicker = false
-                    }
-                )
+            // 监听 NSColorPanel 变化
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("NSColorPanelColorDidChangeNotification"))) { _ in
+                guard isPickerActive else { return }
+                let panel = NSColorPanel.shared
+                guard let rgbColor = panel.color.usingColorSpace(.sRGB) else { return }
+                let newHex = String(format: "#%02X%02X%02X",
+                    Int(round(rgbColor.redComponent * 0xFF)),
+                    Int(round(rgbColor.greenComponent * 0xFF)),
+                    Int(round(rgbColor.blueComponent * 0xFF)))
+                onColorChange(newHex)
+            }
+            .onDisappear {
+                if isPickerActive {
+                    NSColorPanel.shared.close()
+                    isPickerActive = false
+                }
             }
 
             // 标签
             Text(label)
                 .font(.system(size: 13))
-                .foregroundStyle(.primary)
+                .foregroundStyle(themeColors.ink)
 
             Spacer()
 
-            // Hex 值（可点击编辑）
+            // Hex 值（可点击编辑，始终大写显示）
             if isEditingHex {
                 TextField("#", text: $editHexText)
                     .textFieldStyle(.roundedBorder)
@@ -604,9 +535,9 @@ private struct ColorBarRow: View {
                     editHexText = hexValue
                     isEditingHex = true
                 } label: {
-                    Text(hexValue)
+                    Text(hexValue.uppercased())
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(themeColors.fgSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -618,7 +549,7 @@ private struct ColorBarRow: View {
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(themeColors.fgSecondary)
                 }
                 .buttonStyle(.plain)
                 .help(L10n.tr(.reset, language: .en))
@@ -626,37 +557,22 @@ private struct ColorBarRow: View {
         }
         .padding(.vertical, 2)
     }
-}
 
-// MARK: - 颜色选择器弹窗
-
-private struct ColorPickerPopover: View {
-    let hexValue: String
-    let onChange: (String) -> Void
-
-    @State private var selectedColor: Color = .gray
-
-    var body: some View {
-        VStack(spacing: 12) {
-            ColorPicker("", selection: $selectedColor, supportsOpacity: false)
-                .labelsHidden()
-
-            HStack {
-                Button("Cancel") { onChange(hexValue) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                Spacer()
-                Button("OK") {
-                    onChange(selectedColor.toHexString())
-                }
-                .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
+    /// 打开原生 NSColorPanel
+    private func openNativeColorPanel() {
+        let panel = NSColorPanel.shared
+        let nsColor = NSColor(Color(hex: hexValue) ?? .gray)
+        panel.color = nsColor.usingColorSpace(.sRGB) ?? NSColor.gray
+        panel.setTarget(nil)
+        panel.setAction(nil)
+        panel.isContinuous = true
+        panel.showsAlpha = false
+        panel.makeKeyAndOrderFront(nil)
+        // 监听面板关闭
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: panel, queue: .main) { [self] _ in
+            Task { @MainActor in
+                isPickerActive = false
             }
-        }
-        .padding(16)
-        .frame(width: 220)
-        .onAppear {
-            selectedColor = Color(hex: hexValue) ?? .gray
         }
     }
 }
@@ -667,17 +583,18 @@ private struct SettingsSection<Content: View>: View {
     let title: String
     var description: String? = nil
     @ViewBuilder let content: Content
+    @Environment(\.themeColors) private var themeColors
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(themeColors.ink)
 
             if let desc = description {
                 Text(desc)
                     .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(themeColors.fgMuted)
             }
 
             content
@@ -686,8 +603,12 @@ private struct SettingsSection<Content: View>: View {
 }
 
 private struct SettingsDivider: View {
+    @Environment(\.themeColors) private var themeColors
+
     var body: some View {
-        Divider()
+        Rectangle()
+            .fill(themeColors.border)
+            .frame(height: 1)
             .padding(.vertical, 12)
     }
 }

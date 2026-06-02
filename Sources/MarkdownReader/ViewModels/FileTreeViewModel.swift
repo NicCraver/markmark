@@ -49,7 +49,7 @@ final class FileTreeViewModel {
         isEmptyDirectory = false
 
         do {
-            nodes = try await fileService.scanDirectory(
+            let children = try await fileService.scanDirectory(
                 directory,
                 showHiddenFiles: settings.showHiddenFiles,
                 showNonMarkdownFiles: settings.showNonMarkdownFiles
@@ -59,7 +59,16 @@ final class FileTreeViewModel {
                 showHiddenFiles: settings.showHiddenFiles
             )
 
-            // 默认展开根目录
+            // 根目录作为一级节点显示，子目录内容作为其 children
+            let rootNode = FileNode(
+                name: directory.lastPathComponent,
+                path: directory,
+                isDirectory: true,
+                children: children
+            )
+            nodes = [rootNode]
+
+            // 默认展开根目录（显示第一级目录和文件）
             expandedDirs.insert(directory)
         } catch {
             errorMessage = error.localizedDescription

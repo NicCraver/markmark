@@ -4,6 +4,7 @@ import SwiftUI
 struct ErrorView: View {
     let icon: String
     let message: String
+    @Environment(\.themeColors) private var themeColors
 
     init(icon: String = "exclamationmark.triangle", message: String) {
         self.icon = icon
@@ -16,11 +17,11 @@ struct ErrorView: View {
 
             Image(systemName: icon)
                 .font(.system(size: 36))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(themeColors.fgMuted)
 
             Text(message)
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(themeColors.fgSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 

@@ -5,15 +5,6 @@ import UniformTypeIdentifiers
 struct MarkdownReaderApp: App {
 
     init() {
-        // 通过 swift run 运行时，macOS 不会自动将应用设为常规前台应用
-        // 需要手动设置激活策略并激活，否则：
-        // 1. 应用不会出现在 Dock 中
-        // 2. 窗口不会成为 key window，影响光标追踪等功能
-        // 3. 点击窗口很难将应用带到前台
-        //
-        // 注意：必须使用 DispatchQueue.main.async 延迟执行，
-        // 因为 App.init() 时 NSApp（NSApplication 共享实例）尚未创建，
-        // 直接访问 NSApp 会导致 nil 解包崩溃
         DispatchQueue.main.async {
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
@@ -33,10 +24,10 @@ struct MarkdownReaderApp: App {
         .defaultSize(width: 900, height: 600)
         .windowResizability(.automatic)
         .commands {
-            // 设置菜单：Cmd+,
+            // 设置菜单：Cmd+, → 切换窗口内设置状态
             CommandGroup(replacing: .appSettings) {
-                Button(L10n.tr(.settingsTabGeneral, language: language) + "...") {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                Button(L10n.tr(.settingsMenuLabel, language: language)) {
+                    NotificationCenter.default.post(name: .toggleSettings, object: nil)
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
@@ -63,16 +54,11 @@ struct MarkdownReaderApp: App {
                 }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
 
-                Button(L10n.tr(.displayModeSource, language: language)) {
-                    NotificationCenter.default.post(name: .switchToSource, object: nil)
+                Button(L10n.tr(.displayModeRaw, language: language)) {
+                    NotificationCenter.default.post(name: .switchToRaw, object: nil)
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             }
-        }
-
-        // 设置窗口
-        Settings {
-            SettingsView()
         }
     }
 
@@ -90,10 +76,8 @@ struct MarkdownReaderApp: App {
             FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
 
             if isDir.boolValue {
-                // 目录模式
                 NotificationCenter.default.post(name: .openDirectory, object: url)
             } else {
-                // 单文件模式
                 NotificationCenter.default.post(name: .openFile, object: url)
             }
         }
@@ -105,7 +89,8 @@ struct MarkdownReaderApp: App {
 extension Notification.Name {
     static let toggleSidebar = Notification.Name("com.markdownreader.toggleSidebar")
     static let switchToRendered = Notification.Name("com.markdownreader.switchToRendered")
-    static let switchToSource = Notification.Name("com.markdownreader.switchToSource")
+    static let switchToRaw = Notification.Name("com.markdownreader.switchToRaw")
     static let openDirectory = Notification.Name("com.markdownreader.openDirectory")
     static let openFile = Notification.Name("com.markdownreader.openFile")
+    static let toggleSettings = Notification.Name("com.markdownreader.toggleSettings")
 }
