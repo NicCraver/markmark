@@ -75,7 +75,7 @@ struct RenderedMarkdownView: View, Equatable {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(ScrollViewCapturer(ref: scrollViewRef))
         }
-        .modifier(ThemedScrollbarModifier())
+        .scrollIndicators(.automatic)
         .id(fileURL)
         .environment(\.openURL, OpenURLAction { url in
             NSWorkspace.shared.open(url)

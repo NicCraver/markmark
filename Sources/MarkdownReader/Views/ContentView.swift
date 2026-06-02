@@ -258,7 +258,7 @@ struct SettingsContentView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 40)
         }
-        .modifier(ThemedScrollbarModifier())
+        .scrollIndicators(.automatic)
         .scrollContentBackground(.hidden)
         .background(themeColors.surface, in: .rect(
             topLeadingRadius: 10,

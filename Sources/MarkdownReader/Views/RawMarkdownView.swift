@@ -17,7 +17,6 @@ struct RawMarkdownView: View {
             scrollToLine: scrollToLine,
             themeColors: themeColors
         )
-        .modifier(ThemedScrollbarModifier())
         .background(themeColors.surface)
     }
 }

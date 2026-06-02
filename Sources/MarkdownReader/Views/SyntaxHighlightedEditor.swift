@@ -21,7 +21,7 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         // 不使用 NSTextView.scrollableTextView() 工厂方法，避免其自带约束与 SwiftUI 布局冲突
         let scrollView = NSScrollView()
         scrollView.drawsBackground = false
-        scrollView.hasVerticalScroller = false  // 使用 ThemedScrollbarOverlayView 替代原生滚动条
+        scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.scrollerStyle = .overlay
         scrollView.borderType = .noBorder
@@ -78,18 +78,8 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
             fontSize: fontSize
         )
 
-        // 安装主题化滚动条（直接安装，不依赖 ThemedScrollbarModifier）
-        let scrollbarOverlay = ThemedScrollbarOverlayView(
-            knobColor: NSColor(themeColors.scrollbarKnob),
-            trackColor: NSColor(themeColors.scrollbarTrack)
-        )
-        scrollbarOverlay.frame = scrollView.bounds
-        scrollbarOverlay.autoresizingMask = [.width, .height]
-        scrollView.addSubview(scrollbarOverlay)
-
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
-        context.coordinator.scrollbarOverlay = scrollbarOverlay
 
         return scrollView
     }
@@ -127,12 +117,6 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
 
         // 更新边距
         textView.textContainerInset = NSSize(width: contentPadding, height: contentPadding)
-
-        // 更新滚动条颜色（主题切换时同步）
-        if let scrollbarOverlay = context.coordinator.scrollbarOverlay {
-            scrollbarOverlay.knobColor = NSColor(themeColors.scrollbarKnob)
-            scrollbarOverlay.trackColor = NSColor(themeColors.scrollbarTrack)
-        }
 
         // 滚动到指定行
         if let line = scrollToLine {
@@ -210,7 +194,6 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         var parent: SyntaxHighlightedEditor
         weak var textView: NSTextView?
         weak var scrollView: NSScrollView?
-        weak var scrollbarOverlay: ThemedScrollbarOverlayView?
         private var highlightWorkItem: DispatchWorkItem?
 
         init(_ parent: SyntaxHighlightedEditor) {

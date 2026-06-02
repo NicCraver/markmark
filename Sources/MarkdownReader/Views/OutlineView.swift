@@ -69,7 +69,7 @@ struct OutlineView: View {
             }
             .padding(.vertical, 4)
         }
-        .modifier(ThemedScrollbarModifier())
+        .scrollIndicators(.automatic)
     }
 
     // MARK: - 大纲行

@@ -72,16 +72,6 @@ struct MarkdownReaderApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .onAppear {
-                    // 安装主题化滚动条（延迟等视图层级稳定）
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        let tc = ThemeColors.from(SettingsModel.shared.resolvedTheme)
-                        ThemedScrollbarHelper.installAll(
-                            knobColor: NSColor(tc.scrollbarKnob),
-                            trackColor: NSColor(tc.scrollbarTrack)
-                        )
-                    }
-                }
                 // 处理从 Finder 双击或右键「用 Markdown Reader 打开」的文件
                 .onOpenURL { url in
                     var isDir: ObjCBool = false

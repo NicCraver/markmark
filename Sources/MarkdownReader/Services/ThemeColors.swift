@@ -29,10 +29,6 @@ struct ThemeColors: Equatable, Sendable {
     let border: Color
     let borderSubtle: Color
 
-    // 派生滚动条色
-    let scrollbarKnob: Color
-    let scrollbarTrack: Color
-
     /// 从 ThemeDefinition 和对比度派生颜色
     static func from(_ theme: ThemeDefinition) -> ThemeColors {
         let c = Double(theme.contrast) / 100.0
@@ -70,13 +66,7 @@ struct ThemeColors: Equatable, Sendable {
                 ? Color.black.mixed(with: accent, fraction: 0.20 + c * 0.08)
                 : surface.mixed(with: accent, fraction: 0.11 + c * 0.04),
             border: ink.opacity(0.06 + c * 0.04),
-            borderSubtle: ink.opacity(0.04 + c * 0.02),
-            scrollbarKnob: isDark
-                ? ink.opacity(0.12 + c * 0.08)
-                : surface.mixed(with: ink, fraction: 0.22 + c * 0.10),
-            scrollbarTrack: isDark
-                ? ink.opacity(0.04 + c * 0.03)
-                : surface.mixed(with: ink, fraction: 0.10 + c * 0.06)
+            borderSubtle: ink.opacity(0.04 + c * 0.02)
         )
     }
 }
