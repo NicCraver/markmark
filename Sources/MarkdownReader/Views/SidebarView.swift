@@ -246,9 +246,9 @@ struct FileNodeRow: View {
                         // 点击目录标签区域切换展开/折叠
                         fileTreeViewModel.toggleExpand(node.path)
                     }
+                    .contextMenu { directoryContextMenu }
             }
             .listRowBackground(selectionBackground)
-            .contextMenu { directoryContextMenu }
         } else {
             // 文件行使用 Button 确保可靠选中
             Button {
@@ -257,20 +257,15 @@ struct FileNodeRow: View {
                 FileRowView(node: node, fileTreeViewModel: fileTreeViewModel, documentViewModel: documentViewModel)
             }
             .buttonStyle(.plain)
+            .contentShape(Rectangle())
             .listRowBackground(selectionBackground)
             .contextMenu { fileContextMenu }
         }
     }
 
-    /// 是否为根目录节点（根目录不允许重命名/移动/删除）
-    private var isRootDirectory: Bool {
-        node.path == fileTreeViewModel.rootDirectory
-    }
-
     // MARK: - 目录右键菜单
 
     /// 目录的右键菜单：新建文档、新建子目录、重命名、移动到、删除
-    /// 根目录仅显示新建文档和新建子目录，不允许重命名/移动/删除
     @ViewBuilder
     private var directoryContextMenu: some View {
         Button {
@@ -283,24 +278,22 @@ struct FileNodeRow: View {
         } label: {
             Label(L10n.tr(.contextMenuNewSubdirectory, language: language), systemImage: "folder.badge.plus")
         }
-        if !isRootDirectory {
-            Divider()
-            Button {
-                fileTreeViewModel.renameItem(node)
-            } label: {
-                Label(L10n.tr(.contextMenuRename, language: language), systemImage: "pencil")
-            }
-            Button {
-                fileTreeViewModel.moveItem(node)
-            } label: {
-                Label(L10n.tr(.contextMenuMoveTo, language: language), systemImage: "folder.and.arrow.down")
-            }
-            Divider()
-            Button {
-                fileTreeViewModel.deleteItem(node)
-            } label: {
-                Label(L10n.tr(.contextMenuDelete, language: language), systemImage: "trash")
-            }
+        Divider()
+        Button {
+            fileTreeViewModel.renameItem(node)
+        } label: {
+            Label(L10n.tr(.contextMenuRename, language: language), systemImage: "pencil")
+        }
+        Button {
+            fileTreeViewModel.moveItem(node)
+        } label: {
+            Label(L10n.tr(.contextMenuMoveTo, language: language), systemImage: "folder.and.arrow.down")
+        }
+        Divider()
+        Button {
+            fileTreeViewModel.deleteItem(node)
+        } label: {
+            Label(L10n.tr(.contextMenuDelete, language: language), systemImage: "trash")
         }
     }
 

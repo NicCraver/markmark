@@ -370,8 +370,8 @@ final class FileTreeViewModel {
         }
         alert.accessoryView = textField
 
-        alert.addButton(withTitle: L10n.tr(.open, language: language))  // "打开/确认"
-        alert.addButton(withTitle: L10n.tr(.unsavedCancel, language: language))  // "取消"
+        alert.addButton(withTitle: L10n.tr(.confirm, language: language))
+        alert.addButton(withTitle: L10n.tr(.unsavedCancel, language: language))
 
         alert.buttons[0].keyEquivalent = "\r"
         alert.buttons[1].keyEquivalent = "\u{1b}"
