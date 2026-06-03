@@ -1,5 +1,153 @@
 import SwiftUI
 import AppKit
+import ObjectiveC
+
+// MARK: - 全局 Per-File UndoManager 引用
+
+/// 当前活跃文件的 UndoManager，供 NSWindow swizzled getter 访问
+/// nonisolated(unsafe) 确保 ObjC runtime 可从任何线程读取
+nonisolated(unsafe) var _activePerFileUndoManager: UndoManager?
+
+// MARK: - NSWindow undoManager Swizzling
+
+extension NSWindow {
+    private static var _hasSwizzled = false
+
+    /// 替换 NSWindow.undoManager getter，使其返回 per-file UndoManager
+    /// 这是让 Edit 菜单 Undo/Redo 正确工作的关键
+    /// NSWindow.undoManager 是只读属性，无 setter，windowWillReturnUndoManager: 不被 SwiftUI 调用
+    /// 唯一可靠的方式是 method swizzling
+    static func swizzleUndoManager() {
+        guard !_hasSwizzled else { return }
+        _hasSwizzled = true
+
+        let original = class_getInstanceMethod(NSWindow.self, #selector(getter: undoManager))
+        let swizzled = class_getInstanceMethod(NSWindow.self, #selector(_swizzled_undoManager))
+        if let original, let swizzled {
+            method_exchangeImplementations(original, swizzled)
+        }
+    }
+
+    /// Swizzled undoManager getter — 返回 per-file UndoManager（如果存在）
+    /// 由于 method_exchangeImplementations，调用 self._swizzled_undoManager() 实际调用原始实现
+    @objc private func _swizzled_undoManager() -> UndoManager? {
+        if Thread.isMainThread, let um = _activePerFileUndoManager {
+            return um
+        }
+        // 调用原始实现（swizzling 交换了实现，所以这里实际调用原始方法）
+        return self._swizzled_undoManager()
+    }
+}
+
+// MARK: - Per-File UndoManager Provider
+
+/// 全局 UndoManager 提供者，管理 per-file undo 历史
+/// 通过 NSWindow swizzled getter 和 NSTextViewDelegate.undoManager(for:)
+/// 确保菜单验证和文本编辑使用同一个 per-file UndoManager
+@MainActor
+final class UndoManagerProvider: NSObject {
+    static let shared = UndoManagerProvider()
+
+    /// Per-file UndoManager 池（nonisolated(unsafe) 以便 swizzled getter 访问）
+    nonisolated(unsafe) private var _undoManagers: [URL: UndoManager] = [:]
+
+    /// 当前活跃文件的 URL
+    var activeFileURL: URL?
+    nonisolated(unsafe) private var _activeFileURL: URL?
+
+    /// 当前活跃文件的 UndoManager
+    var activeUndoManager: UndoManager {
+        if let url = activeFileURL, let existing = _undoManagers[url] {
+            return existing
+        }
+        // 创建新的 UndoManager
+        let manager = UndoManager()
+        manager.levelsOfUndo = 100
+        if let url = activeFileURL {
+            _undoManagers[url] = manager
+        }
+        return manager
+    }
+
+    /// 获取指定文件的 UndoManager
+    func undoManager(for url: URL?) -> UndoManager? {
+        guard let url = url else { return nil }
+        if let existing = _undoManagers[url] {
+            return existing
+        }
+        let manager = UndoManager()
+        manager.levelsOfUndo = 100
+        _undoManagers[url] = manager
+        return manager
+    }
+
+    /// 切换活跃文件
+    func switchFile(to url: URL?) {
+        activeFileURL = url
+        _activeFileURL = url
+        // 确保 UndoManager 存在
+        if let url = url, _undoManagers[url] == nil {
+            let manager = UndoManager()
+            manager.levelsOfUndo = 100
+            _undoManagers[url] = manager
+        }
+        // 更新全局引用（供 NSWindow swizzled getter 使用）
+        _activePerFileUndoManager = url.flatMap { _undoManagers[$0] }
+        // 清理过多的 UndoManager
+        cleanupIfNeeded()
+    }
+
+    /// 清除所有 per-file UndoManager 的 undo 动作
+    /// 当 NSTextView 被释放时调用，防止悬空指针 crash
+    /// NSUndoManager 不 retain invocation targets，如果 target 被释放后触发 undo 会 crash
+    func removeAllActions() {
+        for (_, um) in _undoManagers {
+            um.removeAllActions()
+        }
+        _activePerFileUndoManager = nil
+    }
+
+    /// 清理过多的 UndoManager（保留最近 20 个）
+    private func cleanupIfNeeded() {
+        guard _undoManagers.count > 20 else { return }
+        let keysToRemove = _undoManagers.keys.filter { $0 != activeFileURL }
+        for key in keysToRemove.prefix(_undoManagers.count - 10) {
+            _undoManagers.removeValue(forKey: key)
+        }
+    }
+}
+
+// MARK: - 可控滚动文本视图
+
+/// NSTextView 子类，支持在高亮期间抑制自动滚动
+/// 防止 setSelectedRange / 布局变化触发 scrollRangeToVisible 导致跳动
+class HighlightableTextView: NSTextView {
+    var suppressAutoScroll = false
+
+    // 不重写 undoManager — 通过 NSTextViewDelegate.undoManager(for:) 和
+    // NSWindowDelegate.windowWillReturnUndoManager: 提供 per-file UndoManager
+    // 这确保文本编辑和菜单验证使用同一个 UndoManager 实例
+
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+
+    override func scrollRangeToVisible(_ range: NSRange) {
+        if !suppressAutoScroll {
+            super.scrollRangeToVisible(range)
+        }
+    }
+
+    deinit {
+        // 安全网：当 NSTextView 被释放时，清除所有 per-file UndoManager 的 undo 动作
+        // NSUndoManager 不 retain invocation targets，如果 NSTextView 被释放后
+        // UndoManager 仍有引用它的 undo 动作，触发 undo 时会访问悬空指针导致 crash
+        // 使用异步调度因为 deinit 不能调用 @MainActor 方法
+        DispatchQueue.main.async {
+            UndoManagerProvider.shared.removeAllActions()
+        }
+    }
+}
 
 // MARK: - 语法高亮编辑器
 
@@ -11,6 +159,10 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
     var contentPadding: CGFloat = 20
     var scrollToLine: Int?
     var themeColors: ThemeColors
+    /// 当前文件 URL，用于 per-file undo 管理
+    var fileURL: URL?
+    /// 是否处于活跃状态（Raw 模式），用于自动获取焦点
+    var isActive: Bool = false
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -26,7 +178,7 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         scrollView.scrollerStyle = .overlay
         scrollView.borderType = .noBorder
 
-        let textView = NSTextView()
+        let textView = HighlightableTextView()
         textView.delegate = context.coordinator
         textView.isRichText = false
         textView.allowsUndo = true
@@ -60,8 +212,15 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         textView.font = defaultFont
         textView.textColor = themeColors.ink.nsColor
 
-        // 初始内容
-        textView.string = content
+        // 初始内容 — 使用 textStorage API + disableUndoRegistration 避免 undo 记录
+        let um = UndoManagerProvider.shared.undoManager(for: fileURL)
+        um?.disableUndoRegistration()
+        if let textStorage = textView.textStorage {
+            textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: content)
+        } else {
+            textView.string = content
+        }
+        um?.enableUndoRegistration()
 
         // 组装 scrollView + textView
         scrollView.documentView = textView
@@ -81,16 +240,45 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
 
+        // 初始化 UndoManagerProvider 的活跃文件
+        UndoManagerProvider.shared.switchFile(to: fileURL)
+
+        // 如果处于活跃状态，自动获取焦点
+        if isActive {
+            DispatchQueue.main.async {
+                textView.window?.makeFirstResponder(textView)
+            }
+        }
+
         return scrollView
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? NSTextView else { return }
+        guard let textView = scrollView.documentView as? HighlightableTextView else { return }
 
-        // 更新内容（仅在非编辑状态下）
+        // 检测文件切换：更新 UndoManagerProvider 的活跃文件
+        if context.coordinator.currentFileURL != fileURL {
+            UndoManagerProvider.shared.switchFile(to: fileURL)
+            context.coordinator.currentFileURL = fileURL
+        }
+
+        // 更新内容（仅在内容确实不同时）
         let currentContent = textView.string
         if currentContent != content {
-            textView.string = content
+            // 使用 textStorage API 更新内容，禁用 undo 注册
+            // 避免程序化内容更新产生 undo 记录
+            textView.undoManager?.disableUndoRegistration()
+            defer { textView.undoManager?.enableUndoRegistration() }
+
+            if let textStorage = textView.textStorage {
+                let fullRange = NSRange(location: 0, length: textStorage.length)
+                textStorage.beginEditing()
+                textStorage.replaceCharacters(in: fullRange, with: content)
+                textStorage.endEditing()
+            } else {
+                textView.string = content
+            }
+
             let syntaxColors = deriveSyntaxColors(from: themeColors)
             MarkdownSyntaxHighlighter.applyHighlights(
                 to: textView,
@@ -115,8 +303,19 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         // 更新插入点颜色
         textView.insertionPointColor = themeColors.accent.nsColor
 
-        // 更新边距
-        textView.textContainerInset = NSSize(width: contentPadding, height: contentPadding)
+        // 更新边距（仅在值变化时更新，避免不必要的布局计算）
+        let currentInset = textView.textContainerInset
+        let newInset = NSSize(width: contentPadding, height: contentPadding)
+        if abs(currentInset.width - newInset.width) > 0.01 || abs(currentInset.height - newInset.height) > 0.01 {
+            textView.textContainerInset = newInset
+        }
+
+        // First responder 管理：切换到 Raw 模式时自动获取焦点
+        if isActive, let window = textView.window, window.firstResponder !== textView {
+            DispatchQueue.main.async {
+                window.makeFirstResponder(textView)
+            }
+        }
 
         // 滚动到指定行
         if let line = scrollToLine {
@@ -192,12 +391,21 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
 
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: SyntaxHighlightedEditor
-        weak var textView: NSTextView?
+        weak var textView: HighlightableTextView?
         weak var scrollView: NSScrollView?
         private var highlightWorkItem: DispatchWorkItem?
+        /// 当前文件 URL，用于检测文件切换
+        var currentFileURL: URL?
 
         init(_ parent: SyntaxHighlightedEditor) {
             self.parent = parent
+        }
+
+        /// NSTextViewDelegate — 为文本视图提供 per-file UndoManager
+        /// 此方法返回的 UndoManager 同时也是 windowWillReturnUndoManager: 返回的实例
+        /// 确保文本编辑和菜单验证使用同一个 UndoManager
+        func undoManager(for view: NSTextView) -> UndoManager? {
+            return UndoManagerProvider.shared.activeUndoManager
         }
 
         func textDidChange(_ notification: Notification) {
@@ -218,12 +426,49 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
 
         @MainActor
         private func reapplyHighlights() {
-            guard let textView = textView else { return }
+            guard let textView = textView,
+                  let scrollView = scrollView,
+                  let layoutManager = textView.layoutManager,
+                  let textContainer = textView.textContainer else { return }
+
             let syntaxColors = parent.deriveSyntaxColors(from: parent.themeColors)
 
-            let selectedRange = textView.selectedRange()
-            let visibleRange = textView.visibleRect
+            // 抑制自动滚动，防止高亮期间 setSelectedRange / 布局变化导致跳动
+            textView.suppressAutoScroll = true
+            defer { textView.suppressAutoScroll = false }
 
+            // 保存选中范围
+            let selectedRange = textView.selectedRange()
+
+            // 保存滚动位置：记录第一个可见字符的位置和垂直偏移
+            let visibleRect = textView.visibleRect
+            let textContainerOrigin = textView.textContainerOrigin
+
+            // 将可见区域从文本视图坐标转换为文本容器坐标
+            let containerVisibleRect = NSRect(
+                x: visibleRect.origin.x - textContainerOrigin.x,
+                y: visibleRect.origin.y - textContainerOrigin.y,
+                width: visibleRect.width,
+                height: visibleRect.height
+            )
+
+            // 获取可见区域对应的字符范围
+            let visibleGlyphRange = layoutManager.glyphRange(forBoundingRect: containerVisibleRect, in: textContainer)
+            let visibleCharRange = layoutManager.characterRange(forGlyphRange: visibleGlyphRange, actualGlyphRange: nil)
+            let firstVisibleCharLocation = visibleCharRange.location
+
+            // 计算第一个可见字符在文本视图坐标系中的 Y 坐标
+            let firstCharGlyphRange = layoutManager.glyphRange(
+                forCharacterRange: NSRange(location: firstVisibleCharLocation, length: 0),
+                actualCharacterRange: nil
+            )
+            let firstCharRect = layoutManager.boundingRect(forGlyphRange: firstCharGlyphRange, in: textContainer)
+            let firstCharYInView = firstCharRect.origin.y + textContainerOrigin.y
+
+            // 计算第一个可见字符相对于可见区域顶部的偏移量
+            let verticalOffset = firstCharYInView - visibleRect.origin.y
+
+            // 应用语法高亮
             MarkdownSyntaxHighlighter.applyHighlights(
                 to: textView,
                 text: textView.string,
@@ -231,12 +476,40 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
                 fontSize: parent.fontSize
             )
 
+            // 确保可见区域的布局已完成（而非仅 1 个字符）
+            layoutManager.ensureLayout(forCharacterRange: visibleCharRange)
+
+            // 基于字符位置恢复滚动位置（在恢复选中范围之前，避免 setSelectedRange 触发二次滚动）
+            let restoredGlyphRange = layoutManager.glyphRange(
+                forCharacterRange: NSRange(location: firstVisibleCharLocation, length: 0),
+                actualCharacterRange: nil
+            )
+            let restoredRect = layoutManager.boundingRect(forGlyphRange: restoredGlyphRange, in: textContainer)
+            let targetY = restoredRect.origin.y + textContainerOrigin.y - verticalOffset
+
+            let visibleHeight = scrollView.visibleRect.height
+            let documentHeight = scrollView.documentView?.frame.height ?? 0
+            let clampedY = max(0, min(targetY, documentHeight - visibleHeight))
+
+            scrollView.contentView.setBoundsOrigin(
+                NSPoint(x: scrollView.contentView.bounds.origin.x, y: clampedY)
+            )
+            scrollView.reflectScrolledClipView(scrollView.contentView)
+
+            // 恢复选中范围（此时滚动位置已固定，suppressAutoScroll 防止二次跳动）
             textView.setSelectedRange(selectedRange)
 
-            guard let scrollView = scrollView else { return }
-            let currentVisible = scrollView.contentView.bounds
-            if currentVisible != visibleRange {
-                scrollView.contentView.setBoundsOrigin(visibleRange.origin)
+            // 延迟再确认一次滚动位置，防止布局管理器异步调整
+            let finalY = clampedY
+            DispatchQueue.main.async {
+                guard let scrollView = self.scrollView else { return }
+                let currentY = scrollView.contentView.bounds.origin.y
+                if abs(currentY - finalY) > 1.0 {
+                    scrollView.contentView.setBoundsOrigin(
+                        NSPoint(x: scrollView.contentView.bounds.origin.x, y: finalY)
+                    )
+                    scrollView.reflectScrolledClipView(scrollView.contentView)
+                }
             }
         }
     }

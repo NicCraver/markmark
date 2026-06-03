@@ -43,8 +43,6 @@ struct SidebarView: View {
             }
             .frame(height: 50)
 
-            Rectangle().fill(themeColors.border).frame(height: 1)
-
             if appViewModel.isSingleFileMode {
                 singleFileView
             } else if fileTreeViewModel.isLoading {
@@ -57,8 +55,6 @@ struct SidebarView: View {
             } else {
                 directoryTreeView
             }
-
-            Rectangle().fill(themeColors.border).frame(height: 1)
 
             // 底部固定区域：Settings 按钮（参考 Buddy 底部固定设置入口）
             settingsButton

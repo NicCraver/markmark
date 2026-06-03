@@ -7,6 +7,9 @@ struct RawMarkdownView: View {
     var fontSize: CGFloat = 13
     var contentPadding: CGFloat = 20
     var scrollToLine: Int?
+    var fileURL: URL?
+    /// 是否处于活跃状态（Raw 模式），用于自动获取焦点
+    var isActive: Bool = false
     @Environment(\.themeColors) private var themeColors
 
     var body: some View {
@@ -15,7 +18,9 @@ struct RawMarkdownView: View {
             fontSize: fontSize,
             contentPadding: contentPadding,
             scrollToLine: scrollToLine,
-            themeColors: themeColors
+            themeColors: themeColors,
+            fileURL: fileURL,
+            isActive: isActive
         )
         .background(themeColors.surface)
     }

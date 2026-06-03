@@ -52,7 +52,7 @@ struct ContentView: View {
                 settings: settings
             ))
             .modifier(ToggleSettingsModifier(appViewModel: appViewModel))
-            .background(TrafficLightHider())
+            .background(TrafficLightHider(bgColor: themeColors.bgSubtle))
             .task {
                 applyAppearance(settings.appearanceMode)
                 if settings.reopenLastLocation {
@@ -437,13 +437,24 @@ private struct ToggleSettingsModifier: ViewModifier {
 /// 通过 NSViewRepresentable 隐藏窗口红绿灯按钮
 /// viewDidMoveToWindow 在视图挂载到窗口时调用，确保能获取到 window 实例
 private struct TrafficLightHider: NSViewRepresentable {
+    let bgColor: Color
+
     func makeNSView(context: Context) -> NSView {
-        TrafficLightObserverView()
+        let view = TrafficLightObserverView()
+        view.bgColor = NSColor(bgColor)
+        return view
     }
 
-    func updateNSView(_ nsView: NSView, context: Context) {}
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let observer = nsView as? TrafficLightObserverView {
+            observer.bgColor = NSColor(bgColor)
+            observer.updateWindowBackground()
+        }
+    }
 
     private final class TrafficLightObserverView: NSView {
+        var bgColor: NSColor = .windowBackgroundColor
+
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
             guard let window else { return }
@@ -454,6 +465,18 @@ private struct TrafficLightHider: NSViewRepresentable {
             // 确保内容延伸到标题栏区域
             window.styleMask.insert(.fullSizeContentView)
             window.titlebarAppearsTransparent = true
+            // 移除标题栏底部分隔线
+            window.titlebarSeparatorStyle = .none
+            // 设置窗口背景色匹配 bgSubtle
+            updateWindowBackground()
+            // 初始化 NSWindow.undoManager swizzling
+            // 替换窗口的 undoManager getter 返回 per-file UndoManager
+            NSWindow.swizzleUndoManager()
+        }
+
+        func updateWindowBackground() {
+            guard let window else { return }
+            window.backgroundColor = bgColor
         }
     }
 }

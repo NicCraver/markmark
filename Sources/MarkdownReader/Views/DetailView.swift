@@ -144,7 +144,10 @@ struct DetailView: View {
                 icon: "exclamationmark.triangle",
                 message: error.localizedDescription
             )
-        } else if documentViewModel.isLoading {
+        } else if documentViewModel.isLoading && !documentViewModel.hasDocument {
+            // 仅在首次加载（无已有文档）时显示进度指示器
+            // 文件切换时 hasDocument 仍为 true（旧文件 URL 未清空），
+            // 保持文档内容视图存活，防止 NSTextView 被释放导致 undo 崩溃
             ProgressView()
                 .tint(themeColors.fgSecondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -220,23 +223,8 @@ struct DetailView: View {
 
     @ViewBuilder
     private var documentContentView: some View {
-        switch documentViewModel.displayMode {
-        case .rendered:
-            EquatableRenderedMarkdownView(
-                content: documentViewModel.content,
-                fileURL: documentViewModel.currentFileURL,
-                contentPadding: settings.contentPaddingPoints,
-                scrollToLine: documentViewModel.scrollToLineRequest,
-                scrollViewRef: markdownScrollViewRef
-            )
-            .onChange(of: documentViewModel.scrollToLineRequest) { _, newValue in
-                if newValue != nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        documentViewModel.clearScrollRequest()
-                    }
-                }
-            }
-        case .raw:
+        ZStack {
+            // Raw 模式视图 — 始终保持存活，避免 NSTextView 被销毁导致 undo 历史丢失
             RawMarkdownView(
                 content: Binding(
                     get: { documentViewModel.content },
@@ -244,12 +232,34 @@ struct DetailView: View {
                 ),
                 fontSize: settings.sourceFontPointSize,
                 contentPadding: settings.contentPaddingPoints,
-                scrollToLine: documentViewModel.scrollToLineRequest
+                scrollToLine: documentViewModel.scrollToLineRequest,
+                fileURL: documentViewModel.currentFileURL,
+                isActive: documentViewModel.displayMode == .raw
             )
+            .opacity(documentViewModel.displayMode == .raw ? 1 : 0)
+            .allowsHitTesting(documentViewModel.displayMode == .raw)
             .onChange(of: documentViewModel.scrollToLineRequest) { _, newValue in
                 if newValue != nil {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         documentViewModel.clearScrollRequest()
+                    }
+                }
+            }
+
+            // 渲染模式视图 — 仅在渲染模式下显示
+            if documentViewModel.displayMode == .rendered {
+                EquatableRenderedMarkdownView(
+                    content: documentViewModel.content,
+                    fileURL: documentViewModel.currentFileURL,
+                    contentPadding: settings.contentPaddingPoints,
+                    scrollToLine: documentViewModel.scrollToLineRequest,
+                    scrollViewRef: markdownScrollViewRef
+                )
+                .onChange(of: documentViewModel.scrollToLineRequest) { _, newValue in
+                    if newValue != nil {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            documentViewModel.clearScrollRequest()
+                        }
                     }
                 }
             }

@@ -670,6 +670,12 @@ extension MarkdownSyntaxHighlighter {
 
         let fullRange = NSRange(location: 0, length: textStorage.length)
 
+        // 禁用 undo 注册，防止语法高亮的属性变更污染 undo 栈
+        // 否则用户按 Cmd+Z 时会尝试撤销高亮属性变更，导致崩溃
+        let undoManager = textView.undoManager
+        undoManager?.disableUndoRegistration()
+        defer { undoManager?.enableUndoRegistration() }
+
         // 先重置为默认属性
         let defaultFont = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         let defaultAttrs: [NSAttributedString.Key: Any] = [
