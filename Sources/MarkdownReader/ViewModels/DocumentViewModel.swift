@@ -39,6 +39,11 @@ final class DocumentViewModel {
     /// 大纲导航滚动请求（非 nil 时触发滚动，滚动后应清空）
     var scrollToLineRequest: Int?
 
+    /// Per-file 内容缓存：保存未写入磁盘的编辑内容
+    /// 切换文件时保存当前内容，切换回来时恢复缓存内容
+    /// 确保 per-file UndoManager 的 undo 动作与内容一致
+    private var contentCache: [URL: String] = [:]
+
     // MARK: - 依赖
 
     private let fileService: FileService
@@ -65,6 +70,12 @@ final class DocumentViewModel {
             isFirstFile = false
         }
 
+        // 切换文件前，保存当前文件的编辑内容到缓存
+        // 确保 per-file UndoManager 的 undo 动作与内容一致
+        if let currentURL = currentFileURL, currentURL != url, hasDocument {
+            contentCache[currentURL] = content
+        }
+
         // 检查是否为 Markdown 文件
         guard url.pathExtension == "md" else {
             fileError = .unsupportedFileType(url.pathExtension)
@@ -79,9 +90,16 @@ final class DocumentViewModel {
         fileError = nil
 
         do {
-            content = try await fileService.readFile(at: url)
+            let diskContent = try await fileService.readFile(at: url)
             currentFileURL = url
             fileName = url.lastPathComponent
+            // 优先使用缓存内容（保留未保存的编辑）
+            // 缓存内容与 per-file UndoManager 的 undo 动作一致
+            if let cached = contentCache[url] {
+                content = cached
+            } else {
+                content = diskContent
+            }
             outlineItems = OutlineService.parse(content)
         } catch let fileError as FileError {
             self.fileError = fileError
@@ -139,5 +157,6 @@ final class DocumentViewModel {
         isFirstFile = true
         displayMode = settings.defaultDisplayMode
         outlineItems = []
+        contentCache.removeAll()
     }
 }
