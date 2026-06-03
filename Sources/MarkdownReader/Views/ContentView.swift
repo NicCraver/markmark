@@ -59,7 +59,12 @@ struct ContentView: View {
                 // 连接 FileTreeViewModel 与 DocumentViewModel
                 fileTreeViewModel.documentViewModel = documentViewModel
                 applyAppearance(settings.appearanceMode)
-                if settings.reopenLastLocation {
+                // 如果应用是通过双击文件启动的，优先打开该文件，不恢复上次位置
+                // 文件打开由 AppDelegate.applicationDidFinishLaunching 发送的通知处理
+                if let appDelegate = NSApp.delegate as? AppDelegate,
+                   appDelegate.pendingOpenFileURL != nil {
+                    // 跳过恢复上次位置
+                } else if settings.reopenLastLocation {
                     restoreLastLocation()
                 }
             }

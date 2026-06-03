@@ -109,6 +109,12 @@ enum L10n {
         case fileDeletedSaveAs
         case fileDeletedDiscard
 
+        // 文件外部修改提醒
+        case fileModifiedExternallyTitle
+        case fileModifiedExternallyMessage
+        case fileModifiedExternallyReload
+        case fileModifiedExternallyDontRemind
+
         // 打开最近
         case openRecent
         case openRecentEmpty
@@ -122,6 +128,7 @@ enum L10n {
         case titleBarOpen
         case titleBarNewFile
         case titleBarSave
+        case titleBarReload
         case titleBarToggleOutline
 
         // 大纲
@@ -145,6 +152,7 @@ enum L10n {
         case contextMenuRename
         case contextMenuMoveTo
         case contextMenuDelete
+        case contextMenuReload
 
         // 右键菜单 - 对话框
         case renameTitle
@@ -233,7 +241,12 @@ enum L10n {
         .titleBarOpen: "Open (⌘O)",
         .titleBarNewFile: "New File",
         .titleBarSave: "Save (⌘S)",
+        .titleBarReload: "Reload",
         .titleBarToggleOutline: "Toggle Outline",
+        .fileModifiedExternallyTitle: "File Modified Externally",
+        .fileModifiedExternallyMessage: "The file has been modified by another application. Reloading will discard your current changes.",
+        .fileModifiedExternallyReload: "Reload",
+        .fileModifiedExternallyDontRemind: "Don't remind me again",
         .outlineTitle: "Outline",
         .outlineEmpty: "No headings",
         .loading: "Loading...",
@@ -248,6 +261,7 @@ enum L10n {
         .contextMenuRename: "Rename",
         .contextMenuMoveTo: "Move to\u{2026}",
         .contextMenuDelete: "Move to Trash",
+        .contextMenuReload: "Reload",
         .renameTitle: "Rename",
         .renameMessage: "Enter a new name for \"{name}\":",
         .renameEmptyName: "Name cannot be empty.",
@@ -332,7 +346,12 @@ enum L10n {
         .titleBarOpen: "打开 (⌘O)",
         .titleBarNewFile: "新建文件",
         .titleBarSave: "保存 (⌘S)",
+        .titleBarReload: "重新加载",
         .titleBarToggleOutline: "切换大纲",
+        .fileModifiedExternallyTitle: "文件已被外部修改",
+        .fileModifiedExternallyMessage: "文件已被其他应用修改，重新加载将丢弃当前未保存的更改。",
+        .fileModifiedExternallyReload: "重新加载",
+        .fileModifiedExternallyDontRemind: "以后不再提醒",
         .outlineTitle: "大纲",
         .outlineEmpty: "暂无标题",
         .loading: "加载中...",
@@ -347,6 +366,7 @@ enum L10n {
         .contextMenuRename: "重命名",
         .contextMenuMoveTo: "移动到\u{2026}",
         .contextMenuDelete: "移到废纸篓",
+        .contextMenuReload: "重新加载",
         .renameTitle: "重命名",
         .renameMessage: "输入「{name}」的新名称：",
         .renameEmptyName: "名称不能为空。",
@@ -431,7 +451,12 @@ enum L10n {
         .titleBarOpen: "開啟 (⌘O)",
         .titleBarNewFile: "新增檔案",
         .titleBarSave: "儲存 (⌘S)",
+        .titleBarReload: "重新載入",
         .titleBarToggleOutline: "切換大綱",
+        .fileModifiedExternallyTitle: "檔案已被外部修改",
+        .fileModifiedExternallyMessage: "檔案已被其他應用修改，重新載入將捨棄目前未儲存的變更。",
+        .fileModifiedExternallyReload: "重新載入",
+        .fileModifiedExternallyDontRemind: "以後不再提醒",
         .outlineTitle: "大綱",
         .outlineEmpty: "暫無標題",
         .loading: "載入中...",
@@ -446,6 +471,7 @@ enum L10n {
         .contextMenuRename: "重新命名",
         .contextMenuMoveTo: "移動到\u{2026}",
         .contextMenuDelete: "移到垃圾桶",
+        .contextMenuReload: "重新載入",
         .renameTitle: "重新命名",
         .renameMessage: "輸入「{name}」的新名稱：",
         .renameEmptyName: "名稱不能為空。",

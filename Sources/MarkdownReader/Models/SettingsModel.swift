@@ -57,6 +57,7 @@ final class SettingsModel {
         static let lastOpenedFilePath   = "com.markdownreader.lastOpenedFilePath"
         static let isDefaultMdOpener    = "com.markdownreader.isDefaultMdOpener"
         static let recentItems          = "com.markdownreader.recentItems"
+        static let skipFileModifiedAlert = "com.markdownreader.skipFileModifiedAlert"
     }
 
     private let defaults = UserDefaults.standard
@@ -92,6 +93,11 @@ final class SettingsModel {
     /// 初始化时从系统实时检测；设置变更后同步写入 UserDefaults 作为缓存
     var isDefaultMdOpener: Bool {
         didSet { defaults.set(isDefaultMdOpener, forKey: Keys.isDefaultMdOpener) }
+    }
+
+    /// 跳过「文件被外部修改」确认弹窗
+    var skipFileModifiedAlert: Bool {
+        didSet { defaults.set(skipFileModifiedAlert, forKey: Keys.skipFileModifiedAlert) }
     }
 
     // MARK: - 外观设置
@@ -271,6 +277,7 @@ final class SettingsModel {
         self.showHiddenFiles = defaults.object(forKey: Keys.showHiddenFiles) as? Bool ?? false
         self.showNonMarkdownFiles = defaults.object(forKey: Keys.showNonMarkdownFiles) as? Bool ?? true
         self.isDefaultMdOpener = Self.checkIsDefaultMdOpener()
+        self.skipFileModifiedAlert = defaults.object(forKey: Keys.skipFileModifiedAlert) as? Bool ?? false
         self.appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: Keys.appearanceMode) ?? "") ?? .system
         self.themeId = defaults.string(forKey: Keys.themeId) ?? "buddy-dark"
         if let data = defaults.data(forKey: Keys.themeCustomOverrides),

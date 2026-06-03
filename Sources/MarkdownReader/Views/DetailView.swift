@@ -37,6 +37,10 @@ struct DetailView: View {
     /// Markdown 内容区 NSScrollView 引用，用于大纲导航滚动
     @State private var markdownScrollViewRef = MarkdownScrollViewRef()
 
+    /// 刷新确认弹窗状态
+    @State private var showReloadAlert = false
+    @State private var dontRemindAgain = false
+
     var body: some View {
         VStack(spacing: 0) {
             titleBar
@@ -57,6 +61,9 @@ struct DetailView: View {
             LeftEdgeShape(radius: 10)
                 .stroke(themeColors.border, lineWidth: 1)
         )
+        .onReceive(NotificationCenter.default.publisher(for: .reloadFile)) { _ in
+            handleReloadButtonTapped()
+        }
     }
 
     // MARK: - TitleBar
@@ -136,6 +143,20 @@ struct DetailView: View {
                 .padding(.trailing, 8)
             }
 
+            // 刷新按钮（文件被外部修改时显示，在保存按钮左侧）
+            if documentViewModel.hasDocument && documentViewModel.isFileModifiedExternally {
+                Button {
+                    handleReloadButtonTapped()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14))
+                        .foregroundStyle(themeColors.accent)
+                }
+                .buttonStyle(.plain)
+                .help(L10n.tr(.titleBarReload, language: language))
+                .padding(.trailing, 4)
+            }
+
             // 保存按钮（在渲染模式切换右侧）
             if documentViewModel.hasDocument {
                 Button {
@@ -165,6 +186,24 @@ struct DetailView: View {
             .padding(.trailing, 12)
         }
         .frame(height: 50)
+        .alert(L10n.tr(.fileModifiedExternallyTitle, language: language), isPresented: $showReloadAlert) {
+            Button(L10n.tr(.fileModifiedExternallyReload, language: language), role: .destructive) {
+                Task {
+                    await documentViewModel.reloadFromDisk()
+                }
+                if dontRemindAgain {
+                    settings.skipFileModifiedAlert = true
+                }
+            }
+            Button(L10n.tr(.unsavedCancel, language: language), role: .cancel) {
+                dontRemindAgain = false
+            }
+        } message: {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(L10n.tr(.fileModifiedExternallyMessage, language: language))
+                Toggle(L10n.tr(.fileModifiedExternallyDontRemind, language: language), isOn: $dontRemindAgain)
+            }
+        }
     }
 
     // MARK: - 内容区
@@ -217,6 +256,17 @@ struct DetailView: View {
     // MARK: - 大纲侧边栏
 
     /// 大纲按钮颜色：激活时强调色，有文档时次要色，无文档时弱化色
+    /// 处理刷新按钮点击
+    private func handleReloadButtonTapped() {
+        if documentViewModel.isDirty && !settings.skipFileModifiedAlert {
+            showReloadAlert = true
+        } else {
+            Task {
+                await documentViewModel.reloadFromDisk()
+            }
+        }
+    }
+
     private var outlineButtonColor: Color {
         if appViewModel.isOutlineVisible {
             return themeColors.accent

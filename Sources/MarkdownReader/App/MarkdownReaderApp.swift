@@ -3,6 +3,8 @@ import SwiftUI
 @main
 struct MarkdownReaderApp: App {
 
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         DispatchQueue.main.async {
             NSApp.setActivationPolicy(.regular)
@@ -73,7 +75,12 @@ struct MarkdownReaderApp: App {
         WindowGroup {
             ContentView()
                 // 处理从 Finder 双击或右键「用 Markdown Reader 打开」的文件
+                // 热启动时与 AppDelegate 配合，通过 isURLAlreadyHandled 去重防止双重打开
                 .onOpenURL { url in
+                    // 跳过已被 AppDelegate 处理的 URL
+                    if let appDelegate = NSApp.delegate as? AppDelegate,
+                       appDelegate.isURLAlreadyHandled(url) { return }
+
                     var isDir: ObjCBool = false
                     FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
 
@@ -153,5 +160,6 @@ extension Notification.Name {
     static let newFile = Notification.Name("com.markdownreader.newFile")
     static let saveFile = Notification.Name("com.markdownreader.saveFile")
     static let saveAsFile = Notification.Name("com.markdownreader.saveAsFile")
+    static let reloadFile = Notification.Name("com.markdownreader.reloadFile")
     static let clearRecentItems = Notification.Name("com.markdownreader.clearRecentItems")
 }

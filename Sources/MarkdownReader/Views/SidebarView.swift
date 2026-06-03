@@ -299,9 +299,20 @@ struct FileNodeRow: View {
 
     // MARK: - 文件右键菜单
 
-    /// 文件的右键菜单：新建文档、重命名、移动到、删除（无「新建子目录」）
+    /// 文件的右键菜单：重新加载、新建文档、重命名、移动到、删除
     @ViewBuilder
     private var fileContextMenu: some View {
+        // 重新加载：仅对当前打开且被外部修改的文件可用
+        Button {
+            NotificationCenter.default.post(name: .reloadFile, object: nil)
+        } label: {
+            Label(L10n.tr(.contextMenuReload, language: language), systemImage: "arrow.clockwise")
+        }
+        .disabled(
+            documentViewModel.currentFileURL != node.path
+                || !documentViewModel.isFileModifiedExternally
+        )
+        Divider()
         Button {
             // 在文件所在目录下新建文档
             fileTreeViewModel.createNewFileInDirectory(node.path.deletingLastPathComponent())

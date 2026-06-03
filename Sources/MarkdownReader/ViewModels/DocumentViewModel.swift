@@ -44,6 +44,12 @@ final class DocumentViewModel {
 
     var hasDocument: Bool = false
 
+    /// 文件是否被外部编辑器修改
+    var isFileModifiedExternally: Bool = false
+
+    /// 是否正在保存（用于忽略自己保存触发的文件系统事件）
+    private var isSaving: Bool = false
+
     /// 新建文件的临时目录
     static let untitledDirectory: URL = {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("MarkdownReader")
@@ -79,6 +85,9 @@ final class DocumentViewModel {
 
     /// Per-file 磁盘内容快照，用于判断内容是否已修改
     private var diskContentSnapshot: [URL: String] = [:]
+
+    /// 当前打开文件的文件系统监控器
+    private let fileWatcher = FileSystemWatcher(debounceInterval: 0.5)
 
     // MARK: - 依赖
 
@@ -166,6 +175,9 @@ final class DocumentViewModel {
         }
 
         isLoading = false
+
+        // 启动文件监控（排除临时文件）
+        startFileWatcher(for: url)
     }
 
     /// 加载选中的文件节点
@@ -253,11 +265,15 @@ final class DocumentViewModel {
             return false
         }
 
+        isSaving = true
+        defer { isSaving = false }
+
         do {
             try await fileService.writeFile(at: url, content: content)
             // 更新磁盘快照
             diskContentSnapshot[url] = content
             isDirty = false
+            isFileModifiedExternally = false
             // 同步更新缓存
             contentCache[url] = content
             return true
@@ -289,6 +305,8 @@ final class DocumentViewModel {
             isDirty = false
             isUntitled = false
             fileError = nil
+            // 启动对新保存文件的外部变更监控
+            startFileWatcher(for: newURL)
         } catch {
             fileError = .permissionDenied(newURL)
         }
@@ -333,6 +351,7 @@ final class DocumentViewModel {
         if isUntitled, let url = currentFileURL {
             try? FileManager.default.removeItem(at: url)
         }
+        stopFileWatcher()
         content = ""
         currentFileURL = nil
         fileName = ""
@@ -340,6 +359,7 @@ final class DocumentViewModel {
         isLoading = false
         isDirty = false
         isUntitled = false
+        isFileModifiedExternally = false
         displayMode = settings.defaultDisplayMode
         outlineItems = []
         contentCache.removeAll()
@@ -350,6 +370,7 @@ final class DocumentViewModel {
     /// 取消选中当前文件（保留其他文件的缓存）
     /// 用于外部删除等场景：仅清理当前文件状态，不丢失其他已编辑文件的缓存
     func deselectCurrentFile() {
+        stopFileWatcher()
         if let url = currentFileURL {
             contentCache.removeValue(forKey: url)
             displayModeCache.removeValue(forKey: url)
@@ -362,17 +383,93 @@ final class DocumentViewModel {
         isLoading = false
         isDirty = false
         isUntitled = false
+        isFileModifiedExternally = false
         displayMode = settings.defaultDisplayMode
         outlineItems = []
     }
 
     func discardUntitledFile() {
         guard isUntitled, let url = currentFileURL else { return }
+        stopFileWatcher()
         try? FileManager.default.removeItem(at: url)
         contentCache.removeValue(forKey: url)
         diskContentSnapshot.removeValue(forKey: url)
         isUntitled = false
         isDirty = false
+        isFileModifiedExternally = false
+    }
+
+    // MARK: - 文件监控与外部变更检测
+
+    /// 启动对指定文件的外部变更监控
+    /// - Parameter url: 要监控的文件 URL
+    private func startFileWatcher(for url: URL) {
+        // 不监控临时文件
+        guard !url.path.hasPrefix(Self.untitledDirectory.path) else {
+            fileWatcher.stopWatching()
+            return
+        }
+
+        // 监控文件所在目录（FSEventStream 不支持直接监控单个文件）
+        let directory = url.deletingLastPathComponent()
+        fileWatcher.startWatching(url: directory) { [weak self] in
+            Task { @MainActor [weak self] in
+                await self?.checkExternalFileChange()
+            }
+        }
+    }
+
+    /// 停止文件监控
+    private func stopFileWatcher() {
+        fileWatcher.stopWatching()
+    }
+
+    /// 检查当前文件是否被外部修改
+    private func checkExternalFileChange() async {
+        guard let url = currentFileURL,
+              !isUntitled,
+              !isSaving,
+              !url.path.hasPrefix(Self.untitledDirectory.path) else { return }
+
+        do {
+            let diskContent = try await fileService.readFile(at: url)
+            // 与当前快照比较，若不同则处理外部修改
+            if let snapshot = diskContentSnapshot[url], diskContent != snapshot {
+                if !isDirty {
+                    // 用户未修改过，自动静默刷新
+                    content = diskContent
+                    diskContentSnapshot[url] = diskContent
+                    contentCache[url] = diskContent
+                    outlineItems = OutlineService.parse(diskContent)
+                } else {
+                    // 用户有修改，显示刷新按钮
+                    isFileModifiedExternally = true
+                }
+            }
+        } catch {
+            // 文件可能已被删除，忽略错误
+        }
+    }
+
+    /// 从磁盘重新加载当前文件（丢弃当前修改）
+    func reloadFromDisk() async {
+        guard let url = currentFileURL else { return }
+
+        isLoading = true
+        isFileModifiedExternally = false
+
+        do {
+            let diskContent = try await fileService.readFile(at: url)
+            content = diskContent
+            diskContentSnapshot[url] = diskContent
+            contentCache[url] = diskContent
+            isDirty = false
+            outlineItems = OutlineService.parse(diskContent)
+        } catch {
+            fileError = .unknown(error)
+        }
+
+        isLoading = false
     }
 
     // MARK: - 文件系统操作协调
@@ -400,6 +497,8 @@ final class DocumentViewModel {
         if currentFileURL == oldURL {
             currentFileURL = newURL
             fileName = newURL.lastPathComponent
+            // 同一目录重命名，目录监控仍有效，但重启以确保路径一致性
+            startFileWatcher(for: newURL)
         }
     }
 
@@ -451,6 +550,7 @@ final class DocumentViewModel {
         if currentFileURL == oldURL {
             currentFileURL = newURL
             fileName = newURL.lastPathComponent
+            startFileWatcher(for: newURL)
         }
 
         // 如果当前编辑的文件在被移动的目录内，也更新引用
@@ -459,6 +559,7 @@ final class DocumentViewModel {
             let newCurrentURL = URL(fileURLWithPath: relativePath)
             currentFileURL = newCurrentURL
             fileName = newCurrentURL.lastPathComponent
+            startFileWatcher(for: newCurrentURL)
         }
 
         // 迁移目录内所有子文件的缓存
