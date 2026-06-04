@@ -155,7 +155,7 @@
 - [x] GitHub Actions release.yml 自动化发布流程
 - [x] 默认 Markdown 打开程序设置（NSWorkspace 注册）
 - [x] 全套 AppIcon 资源
-- [x] release-notes-v1.0.0.md 发布说明
+- [x] docs/releases/release-notes-v1.0.0.md 发布说明
 
 **交付物：** ✅ 完整的构建发布流程
 

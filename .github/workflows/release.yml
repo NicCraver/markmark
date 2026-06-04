@@ -174,8 +174,8 @@ jobs:
           BODY
 
           # Append changelog if available
-          if [ -f "release-notes-${TAG}.md" ]; then
-            cat "release-notes-${TAG}.md" >> /tmp/release-body.md
+          if [ -f "docs/releases/release-notes-${TAG}.md" ]; then
+            cat "docs/releases/release-notes-${TAG}.md" >> /tmp/release-body.md
           elif [ -f "CHANGELOG.md" ]; then
             awk "/^## \\[.*${VERSION}.*\\]/,/^## \\[/" CHANGELOG.md | sed '$d' >> /tmp/release-body.md
           fi
