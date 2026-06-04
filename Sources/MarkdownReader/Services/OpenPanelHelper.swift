@@ -2,13 +2,22 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// 打开面板工具，提供统一的 NSOpenPanel / NSSavePanel 调用逻辑
-/// MarkdownReaderApp（菜单 Cmd+O）和 ContentView（Sidebar 按钮）共用
+/// MarkdownReaderApp（菜单 Cmd+O）和各视图按钮共用
 enum OpenPanelHelper {
+
+    /// 防止重复弹窗的重入保护
+    /// WindowGroup 可能创建多个 ContentView 实例同时监听通知，
+    /// 即使已改为直接调用，仍保留此保护作为安全网
+    @MainActor
+    private static var isPanelShowing = false
 
     /// 显示打开面板，用户选择后发送对应通知
     /// - Parameter language: 当前界面语言，用于面板提示文本
     @MainActor
     static func show(language: Language) {
+        guard !isPanelShowing else { return }
+        isPanelShowing = true
+
         // 确保应用在前台，避免 NSOpenPanel 被遮挡
         NSApp.activate(ignoringOtherApps: true)
 
@@ -29,6 +38,8 @@ enum OpenPanelHelper {
                 NotificationCenter.default.post(name: .openFile, object: url)
             }
         }
+
+        isPanelShowing = false
     }
 
     /// 显示另存为面板，让用户选择保存位置
@@ -43,6 +54,9 @@ enum OpenPanelHelper {
         defaultDirectory: URL? = nil,
         suggestedName: String = "Untitled.md"
     ) -> URL? {
+        guard !isPanelShowing else { return nil }
+        isPanelShowing = true
+
         NSApp.activate(ignoringOtherApps: true)
 
         let panel = NSSavePanel()
@@ -62,9 +76,14 @@ enum OpenPanelHelper {
             }
         }
 
+        let result: URL?
         if panel.runModal() == .OK, let url = panel.url {
-            return url
+            result = url
+        } else {
+            result = nil
         }
-        return nil
+
+        isPanelShowing = false
+        return result
     }
 }

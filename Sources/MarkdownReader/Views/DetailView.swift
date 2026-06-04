@@ -87,7 +87,7 @@ struct DetailView: View {
                 .padding(.leading, 8)
 
                 Button {
-                    NotificationCenter.default.post(name: .openPanel, object: nil)
+                    OpenPanelHelper.show(language: language)
                 } label: {
                     Image(systemName: "folder.fill")
                         .font(.system(size: 14))
@@ -124,6 +124,19 @@ struct DetailView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .padding(.leading, 12)
+
+                    Button {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(path, forType: .string)
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 10))
+                            .foregroundStyle(themeColors.fgMuted)
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.tr(.titleBarCopyPath, language: language))
+                    .padding(.leading, 2)
                 }
             }
 

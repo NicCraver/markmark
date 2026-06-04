@@ -109,6 +109,11 @@ final class DocumentViewModel {
     /// 加载文件内容
     /// - Parameter url: 文件 URL
     func loadFile(at url: URL) async {
+        // 幂等保护：如果已经加载了同一文件且内容非空，跳过重复加载
+        if currentFileURL == url && !content.isEmpty && fileError == nil {
+            return
+        }
+
         // 切换文件前，保存当前文件的编辑内容和显示模式到缓存
         if let currentURL = currentFileURL, currentURL != url, hasDocument {
             contentCache[currentURL] = content

@@ -76,7 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(url.path as String, forKey: "pendingOpenFilePath")
             UserDefaults.standard.removeObject(forKey: "pendingOpenDirectoryPath")
         }
-        UserDefaults.standard.synchronize()
+        // 不需要手动 synchronize()，UserDefaults 会自动定期同步到磁盘
 
         if didFinishLaunching {
             // 热启动
@@ -90,7 +90,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // 无可见窗口：SwiftUI 可能创建了不可见窗口
                 logger.info("Hot start: no visible window — activating hidden window + posting notification")
                 activateFirstHiddenWindow()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                // 使用 async 而非 asyncAfter(0.3)，避免不必要的 300ms 延迟
+                // activateFirstHiddenWindow 同步完成窗口激活，下一个 runloop 周期即可安全发通知
+                DispatchQueue.main.async {
                     let name: Notification.Name = isDir.boolValue ? .openDirectory : .openFile
                     NotificationCenter.default.post(name: name, object: url)
                 }

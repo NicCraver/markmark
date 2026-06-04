@@ -44,6 +44,9 @@ final class CaptureNSView: NSView {
             if let scrollView = view as? NSScrollView {
                 ref.scrollView = scrollView
                 scrollView.scrollerStyle = .overlay
+                if !(scrollView.verticalScroller is ThinOverlayScroller) {
+                    scrollView.verticalScroller = ThinOverlayScroller()
+                }
                 return
             }
             candidate = view.superview

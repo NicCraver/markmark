@@ -5,6 +5,28 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.4] - 2026-06-04
+
+### 新增
+
+- **标题栏复制路径按钮**：DetailView 标题栏新增一键复制文件路径按钮
+- **右键菜单复制路径**：文件树中目录和文件的右键菜单均新增「复制路径」选项
+- **自定义细滚动条**：新增 `ThinOverlayScroller` 类，渲染 6px 圆角滑块，覆盖非 NSTextView 的 NSScrollView（如文件树列表）
+- **OpenPanelHelper 重入保护**：新增 `isPanelShowing` 标志位，防止 WindowGroup 多实例并发触发重复弹窗
+- **OverlayScrollerHelper 三级搜索策略**：重写滚动条查找逻辑，支持 superview 链 → 兄弟视图 → 祖先区域三级搜索，解决深层级视图中滚动条样式不生效的问题
+- **Package.resolved 纳入版本控制**：锁定依赖版本确保构建可复现
+
+### 变更
+
+- **直接调用 OpenPanelHelper**：SidebarView、DetailView、WelcomeView 改为直接调用 `OpenPanelHelper.show()`，移除 `.openPanel` 通知方式，避免 WindowGroup 多实例重复弹窗
+- **DocumentViewModel 幂等加载**：`loadFile(at:)` 新增幂等保护，已加载同一文件且内容非空时跳过重复加载
+- **热启动延迟移除**：AppDelegate 中 `DispatchQueue.main.asyncAfter(0.3)` 改为 `DispatchQueue.main.async`，消除不必要的 300ms 延迟
+- **移除冗余 synchronize()**：AppDelegate 中 `UserDefaults.standard.synchronize()` 调用移除，UserDefaults 自动定期同步
+- **ContentView 清理**：移除 4 处冗余的 `loadFile(at:)` 调用，统一由 `SelectionChangeModifier` 响应 `selectedFileURL` 变化触发加载
+- **目录关闭优化**：切换到单文件模式时跳过 `clearDirectory()`，文件树即将被隐藏无需清空
+- **WelcomeView 清理**：移除内联 `openPanel()` 方法和 `UniformTypeIdentifiers` 导入，统一使用 `OpenPanelHelper.show()`
+- **应用图标更新**：更新全部 10 个 AppIcon 尺寸图片
+
 ## [1.0.3] - 2026-06-04
 
 ### 新增

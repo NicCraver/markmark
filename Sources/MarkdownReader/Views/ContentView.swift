@@ -70,9 +70,7 @@ struct ContentView: View {
                     settings.lastOpenedDirectory = nil
                     settings.lastOpenedFile = url
                     settings.addRecentItem(url: url, isDirectory: false)
-                    Task {
-                        await documentViewModel.loadFile(at: url)
-                    }
+                    // 不需要显式调用 loadFile — selectedFileURL 变化会触发 SelectionChangeModifier 统一加载
                 } else if let dirPath = UserDefaults.standard.string(forKey: "pendingOpenDirectoryPath") {
                     UserDefaults.standard.removeObject(forKey: "pendingOpenDirectoryPath")
                     let url = URL(fileURLWithPath: dirPath)
@@ -168,9 +166,7 @@ struct ContentView: View {
         } else if let file = settings.lastOpenedFile {
             appViewModel.openSingleFile(file)
             fileTreeViewModel.selectedFileURL = file
-            Task {
-                await documentViewModel.loadFile(at: file)
-            }
+            // 不需要显式调用 loadFile — selectedFileURL 变化会触发 SelectionChangeModifier 统一加载
         } else {
             // 默认打开 ~/Documents，避免访问 Music 等受限目录触发权限弹窗
             let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
@@ -391,9 +387,7 @@ private struct FileOpenModifier: ViewModifier {
                         settings.lastOpenedDirectory = nil
                         settings.lastOpenedFile = url
                         settings.addRecentItem(url: url, isDirectory: false)
-                        Task {
-                            await documentViewModel.loadFile(at: url)
-                        }
+                        // 不需要显式调用 loadFile — selectedFileURL 变化会触发 SelectionChangeModifier 统一加载
                     }
                 } else {
                     appViewModel.openSingleFile(url)
@@ -401,19 +395,7 @@ private struct FileOpenModifier: ViewModifier {
                     settings.lastOpenedDirectory = nil
                     settings.lastOpenedFile = url
                     settings.addRecentItem(url: url, isDirectory: false)
-                    Task {
-                        await documentViewModel.loadFile(at: url)
-                    }
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .openPanel)) { _ in
-                if documentViewModel.isUntitled && documentViewModel.isDirty {
-                    handleUnsavedChangesBeforeAction { proceed in
-                        guard proceed else { return }
-                        OpenPanelHelper.show(language: settings.languagePref.resolvedLanguage)
-                    }
-                } else {
-                    OpenPanelHelper.show(language: settings.languagePref.resolvedLanguage)
+                    // 不需要显式调用 loadFile — selectedFileURL 变化会触发 SelectionChangeModifier 统一加载
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .newFile)) { _ in
@@ -552,8 +534,9 @@ private struct DirectoryChangeModifier: ViewModifier {
                         await fileTreeViewModel.loadDirectory(dir)
                     }
                 } else {
-                    // 目录关闭（如切换到单文件模式），停止监控并清空文件树
-                    fileTreeViewModel.clearDirectory()
+                    // 目录关闭（如切换到单文件模式）
+                    // 跳过 clearDirectory()：文件树即将被隐藏，无需清空
+                    // 如果用户重新打开目录，loadDirectory 会覆盖旧数据
                 }
             }
     }

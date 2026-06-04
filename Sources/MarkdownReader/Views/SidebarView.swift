@@ -28,9 +28,9 @@ struct SidebarView: View {
                 .help(L10n.tr(.titleBarToggleSidebar, language: language))
                 .padding(.leading, 8)
 
-                // 打开按钮（与菜单 Cmd+O 功能一致）
+                // 打开按钮（与菜单 Cmd+O 功能一致，直接调用避免 WindowGroup 多实例重复弹窗）
                 Button {
-                    NotificationCenter.default.post(name: .openPanel, object: nil)
+                    OpenPanelHelper.show(language: language)
                 } label: {
                     Image(systemName: "folder.fill")
                         .font(.system(size: 14))
@@ -267,7 +267,7 @@ struct FileNodeRow: View {
 
     // MARK: - 目录右键菜单
 
-    /// 目录的右键菜单：新建文档、新建子目录、重命名、移动到、删除
+    /// 目录的右键菜单：新建文档、新建子目录、复制路径、重命名、移动到、删除
     @ViewBuilder
     private var directoryContextMenu: some View {
         Button {
@@ -279,6 +279,14 @@ struct FileNodeRow: View {
             fileTreeViewModel.createSubdirectory(in: node.path)
         } label: {
             Label(L10n.tr(.contextMenuNewSubdirectory, language: language), systemImage: "folder.badge.plus")
+        }
+        Divider()
+        Button {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(node.path.path, forType: .string)
+        } label: {
+            Label(L10n.tr(.contextMenuCopyPath, language: language), systemImage: "doc.on.doc")
         }
         Divider()
         Button {
@@ -301,7 +309,7 @@ struct FileNodeRow: View {
 
     // MARK: - 文件右键菜单
 
-    /// 文件的右键菜单：重新加载、新建文档、重命名、移动到、删除
+    /// 文件的右键菜单：重新加载、复制路径、新建文档、重命名、移动到、删除
     @ViewBuilder
     private var fileContextMenu: some View {
         // 重新加载：仅对当前打开且被外部修改的文件可用
@@ -314,6 +322,13 @@ struct FileNodeRow: View {
             documentViewModel.currentFileURL != node.path
                 || !documentViewModel.isFileModifiedExternally
         )
+        Button {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(node.path.path, forType: .string)
+        } label: {
+            Label(L10n.tr(.contextMenuCopyPath, language: language), systemImage: "doc.on.doc")
+        }
         Divider()
         Button {
             // 在文件所在目录下新建文档

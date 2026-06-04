@@ -47,3 +47,4 @@ Carthage/Build/
 # Build artifacts
 docs/plan.html
 scripts/.seticon-bin
+*.icns
