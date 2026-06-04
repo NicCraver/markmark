@@ -43,6 +43,7 @@ final class CaptureNSView: NSView {
         while let view = candidate {
             if let scrollView = view as? NSScrollView {
                 ref.scrollView = scrollView
+                scrollView.scrollerStyle = .overlay
                 return
             }
             candidate = view.superview

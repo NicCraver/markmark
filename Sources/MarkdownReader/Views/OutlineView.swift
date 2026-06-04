@@ -68,6 +68,7 @@ struct OutlineView: View {
                 }
             }
             .padding(.vertical, 4)
+            .background(OverlayScrollerHelper())
         }
         .scrollIndicators(.automatic)
     }

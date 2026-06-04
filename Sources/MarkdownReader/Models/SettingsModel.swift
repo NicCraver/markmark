@@ -304,7 +304,9 @@ final class SettingsModel {
         }
         self.sourceFontSize = defaults.object(forKey: Keys.sourceFontSize) as? Int ?? 13
         self.contentPadding = defaults.object(forKey: Keys.contentPadding) as? Int ?? 20
-        self.systemIsDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        // NSApp 在应用启动极早期可能尚未初始化（如通过 UpdateViewModel → SettingsModel.shared 触发时），
+        // 使用可选链安全访问，不可用时默认为 false（浅色）
+        self.systemIsDark = NSApp?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
         // 恢复上次位置（验证路径是否仍存在）
         if let dirPath = defaults.string(forKey: Keys.lastOpenedDirectory) {

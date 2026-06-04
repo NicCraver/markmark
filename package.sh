@@ -1,11 +1,13 @@
 #!/bin/bash
 # 一键构建 + 打包 MarkdownReader.dmg
-# 用法: ./package.sh [--arch arm64|x86_64]
+# 用法: ./package.sh [--arch arm64|x86_64] [-d|--distribution]
 #   不指定 --arch 时同时构建两个架构
+#   --distribution  启用分发模式签名（需 Developer ID 证书 + 公证）
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP_NAME="MarkdownReader"
+DISTRIBUTION=false
 
 build_dmg() {
     local ARCH="$1"
@@ -17,7 +19,11 @@ build_dmg() {
     echo "=========================================="
 
     # 1. 构建并签名
-    ./build-app.sh --release --sign --arch "$ARCH"
+    local BUILD_ARGS=(--release --sign --arch "$ARCH")
+    if $DISTRIBUTION; then
+        BUILD_ARGS+=(--distribution)
+    fi
+    ./build-app.sh "${BUILD_ARGS[@]}"
 
     # 2. 提取 App 图标作为 DMG 卷图标
     VOLICON="${APP_NAME}.app/Contents/Resources/AppIcon.icns"
@@ -92,6 +98,7 @@ while [[ $# -gt 0 ]]; do
             TARGET_ARCH="$2"
             shift
             ;;
+        -d|--distribution) DISTRIBUTION=true ;;
         *) echo "未知选项: $1"; exit 1 ;;
     esac
     shift

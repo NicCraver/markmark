@@ -8,7 +8,16 @@
 set -euo pipefail
 
 APP_NAME="MarkdownReader"
-VERSION="1.0.3"
+
+# 动态读取版本号（优先级：git tag > CHANGELOG.md > 兜底）
+if VERSION=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null | sed 's/^v//'); then
+    echo "📌 版本号来自 git tag: $VERSION"
+elif VERSION=$(grep -m1 -o '\[[0-9][0-9.]*\]' CHANGELOG.md 2>/dev/null | tr -d '[]'); then
+    echo "📌 版本号来自 CHANGELOG.md: $VERSION"
+else
+    VERSION="0.0.0-dev"
+    echo "⚠️  未找到 git tag 或 CHANGELOG.md，使用兜底版本: $VERSION"
+fi
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONFIG="debug"
 SIGN_IDENTITY=""
@@ -89,102 +98,15 @@ if [ -d "$ASSETS_SRC" ]; then
         "$ASSETS_SRC" 2>/dev/null || echo "⚠️  actool 编译失败，图标可能不显示（不影响功能）"
 fi
 
-# 创建 Info.plist
-cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>zh-Hans</string>
-    <key>CFBundleExecutable</key>
-    <string>MarkdownReader</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleIconName</key>
-    <string>AppIcon</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.markdownreader.app</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>Markdown Reader</string>
-    <key>CFBundleDisplayName</key>
-    <string>Markdown Reader</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>${VERSION}</string>
-    <key>CFBundleVersion</key>
-    <string>${VERSION}</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSSupportsAutomaticTermination</key>
-    <true/>
-    <key>NSSupportsSuddenTermination</key>
-    <true/>
-    <key>LSApplicationCategoryType</key>
-    <string>public.app-category.productivity</string>
-    <key>CFBundleDocumentTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeName</key>
-            <string>Markdown Document</string>
-            <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
-            <key>LSHandlerRank</key>
-            <string>Default</string>
-            <key>LSItemContentTypes</key>
-            <array>
-                <string>net.daringfireball.markdown</string>
-            </array>
-        </dict>
-        <dict>
-            <key>CFBundleTypeName</key>
-            <string>Plain Text Markdown</string>
-            <key>CFBundleTypeRole</key>
-            <string>Viewer</string>
-            <key>LSHandlerRank</key>
-            <string>Alternate</string>
-            <key>LSItemContentTypes</key>
-            <array>
-                <string>public.plain-text</string>
-            </array>
-            <key>CFBundleTypeExtensions</key>
-            <array>
-                <string>md</string>
-                <string>markdown</string>
-            </array>
-        </dict>
-    </array>
-    <key>UTImportedTypeDeclarations</key>
-    <array>
-        <dict>
-            <key>UTTypeIdentifier</key>
-            <string>net.daringfireball.markdown</string>
-            <key>UTTypeConformsTo</key>
-            <array>
-                <string>public.plain-text</string>
-            </array>
-            <key>UTTypeDescription</key>
-            <string>Markdown Document</string>
-            <key>UTTypeTagSpecification</key>
-            <dict>
-                <key>public.filename-extension</key>
-                <array>
-                    <string>md</string>
-                    <string>markdown</string>
-                    <string>mdown</string>
-                    <string>mkd</string>
-                </array>
-            </dict>
-        </dict>
-    </array>
-</dict>
-</plist>
-PLIST
+# 从模板生成 Info.plist（与 CI 流程共用同一模板）
+PLIST_TEMPLATE="${PROJECT_DIR}/scripts/Info.plist"
+if [ -f "$PLIST_TEMPLATE" ]; then
+    sed "s/__VERSION__/$VERSION/g" "$PLIST_TEMPLATE" > "$APP_BUNDLE/Contents/Info.plist"
+    echo "📝 Info.plist 从模板生成 (版本: $VERSION)"
+else
+    echo "❌ 未找到 Info.plist 模板: $PLIST_TEMPLATE"
+    exit 1
+fi
 
 # 创建 PkgInfo
 echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"

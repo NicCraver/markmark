@@ -109,6 +109,7 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .scrollIndicators(.automatic)
+        .background(OverlayScrollerHelper())
     }
 
     // MARK: - 目录树（使用递归 DisclosureGroup 渲染嵌套结构）
@@ -122,6 +123,7 @@ struct SidebarView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .scrollIndicators(.automatic)
+        .background(OverlayScrollerHelper())
         .focusable()
         .onMoveCommand { direction in
             switch direction {
