@@ -5,6 +5,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.9] - 2026-06-06
+
+### 修复
+
+- **Appearance 变化时 NSTextView 文字不可见**：深色/浅色主题切换后原文模式文字颜色可能变为与背景相同，导致内容不可见。修复方式：
+  - `applicationDidFinishLaunching` 中提前设置 `NSApp.appearance`，避免 SwiftUI 视图创建后 AppKit 覆盖 textColor
+  - `SyntaxHighlightedEditor` 新增 appearance 变化检测，切换时自动重应用文字颜色和语法高亮
+  - 显式设置 `textView.backgroundColor = .clear`，防止 AppKit 在 appearance 变化时重置为不透明背景
+  - `Color.nsColor` 转换改用 sRGB 色彩空间创建固定颜色，消除 SwiftUI 颜色目录动态解析问题
+- **自动更新签名修复**：`codesign --deep`（已弃用）改为精确签名，先签名 `Resources/*.bundle` 再签名主 app，避免递归签名破坏 SwiftUI 颜色目录签名导致 NSColor(SwiftUI.Color) 运行时解析失败
+- **CI 构建指定架构**：`swift build -c release` 改为 `swift build -c release --arch arm64`，确保 CI 构建产物架构正确
+
 ## [1.0.8] - 2026-06-05
 
 ### 修复

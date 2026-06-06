@@ -60,7 +60,7 @@ jobs:
         run: brew install create-dmg
 
       - name: Build
-        run: swift build -c release
+        run: swift build -c release --arch arm64
 
       - name: Patch Bundle.module resource paths
         # SPM generates resource_bundle_accessor.swift using Bundle.main.bundleURL to locate
@@ -82,7 +82,7 @@ jobs:
 
           if [[ "$PATCHED" -gt 0 ]]; then
             echo "🔨 Rebuilding with patched Bundle.module paths..."
-            swift build -c release
+            swift build -c release --arch arm64
           else
             echo "✅ No patches needed (accessors already use resourceURL)"
           fi

@@ -385,7 +385,11 @@ final class UpdateViewModel {
         /usr/bin/xattr -cr "\(appPath)" 2>/dev/null
 
         # 重新 ad-hoc 签名（cp -R 替换后签名断裂，macOS 可能限制 AppKit 功能）
-        /usr/bin/codesign --force --deep --sign - "\(appPath)" 2>/dev/null
+        # 不使用 --deep（Apple 已弃用）：它递归签名嵌套代码时可能破坏 SwiftUI 颜色目录签名，
+        # 导致 NSColor(SwiftUI.Color) 在运行时解析失败，使 NSTextView 文字不可见
+        # 改为分别签名 bundle 和主 app
+        find "\(appPath)/Contents/Resources" -name "*.bundle" -exec /usr/bin/codesign --force --sign - {} \\; 2>/dev/null
+        /usr/bin/codesign --force --sign - "\(appPath)" 2>/dev/null
 
         # 验证新 app 可执行文件存在
         if [ -x "\(appPath)/Contents/MacOS/MarkdownReader" ]; then

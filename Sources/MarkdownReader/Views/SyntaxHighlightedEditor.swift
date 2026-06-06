@@ -292,6 +292,7 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         textView.isSelectable = true
         textView.isEditable = true
         textView.drawsBackground = false
+        textView.backgroundColor = .clear  // 显式设置透明背景，防止 appearance 变化时 AppKit 重置为不透明
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.insertionPointColor = themeColors.accent.nsColor
@@ -335,6 +336,9 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
         searchRef?.textView = textView
+
+        // 记录当前 appearance，后续 updateNSView 中检测变化
+        context.coordinator.lastAppearanceToken = NSApp.effectiveAppearance.description
 
         // 初始化 UndoManagerProvider 的活跃文件
         UndoManagerProvider.shared.switchFile(to: fileURL)
@@ -399,6 +403,13 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         // 更新插入点颜色和文字颜色
         textView.insertionPointColor = themeColors.accent.nsColor
         textView.textColor = themeColors.ink.nsColor
+        // 防御性重置：AppKit 可能在 appearance 变化时将 drawsBackground 重置为 true
+        // 或将 backgroundColor 重置为不透明色，导致文字被覆盖不可见
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+
+        // 检测 appearance 变化（NSApp.appearance 被设置时 AppKit 会重置 NSTextView 的 textColor）
+        context.coordinator.checkAppearanceChange()
 
         // 主题变化时重新应用语法高亮（内容/字号未变但颜色可能不同）
         if context.coordinator.previousThemeColors != themeColors {
@@ -506,9 +517,38 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
         private var highlightWorkItem: DispatchWorkItem?
         var currentFileURL: URL?
         var previousThemeColors: ThemeColors?
+        /// 上次记录的 appearance token，用于检测 appearance 变化
+        var lastAppearanceToken: String?
 
         init(_ parent: SyntaxHighlightedEditor) {
             self.parent = parent
+        }
+
+        /// 检查 appearance 是否变化，如果变化则重新应用颜色
+        /// 在 updateNSView 中调用，因为 SwiftUI 不会在 appearance 变化时主动调用 updateNSView
+        @MainActor
+        func checkAppearanceChange() {
+            let currentToken = NSApp.effectiveAppearance.description
+            guard currentToken != lastAppearanceToken else { return }
+            lastAppearanceToken = currentToken
+
+            // appearance 变化时重新应用文字颜色和语法高亮
+            // AppKit 在 NSApp.appearance 变化时会自动重置 NSTextView 的以下属性：
+            // - textColor → 系统默认色（可能和背景色相同导致文字不可见）
+            // - drawsBackground → 可能被重置为 true
+            // - backgroundColor → 可能被重置为不透明的系统色
+            guard let textView else { return }
+            textView.drawsBackground = false
+            textView.backgroundColor = .clear
+            textView.textColor = parent.themeColors.ink.nsColor
+            textView.insertionPointColor = parent.themeColors.accent.nsColor
+            let syntaxColors = parent.deriveSyntaxColors(from: parent.themeColors)
+            MarkdownSyntaxHighlighter.applyHighlights(
+                to: textView,
+                text: textView.string,
+                colors: syntaxColors,
+                fontSize: parent.fontSize
+            )
         }
 
         /// NSTextViewDelegate — 为文本视图提供 per-file UndoManager
@@ -639,8 +679,14 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
 // MARK: - SwiftUI Color → NSColor 转换
 
 extension Color {
+    // NSColor(SwiftUI.Color) 创建的是"目录颜色"（catalog color），会根据当前
+    // NSAppearance 懒加载解析。codesign --deep 重签名可能破坏 SwiftUI 颜色目录签名，
+    // 导致解析失败返回错误色值（如 .clear 或背景色），使文字不可见。
+    // 显式转换为 sRGB 色彩空间创建固定颜色，消除动态解析问题。
     var nsColor: NSColor {
-        NSColor(self)
+        let resolved = NSColor(self).usingColorSpace(.sRGB) ?? NSColor.black
+        return NSColor(red: resolved.redComponent, green: resolved.greenComponent,
+                       blue: resolved.blueComponent, alpha: resolved.alphaComponent)
     }
 }
 

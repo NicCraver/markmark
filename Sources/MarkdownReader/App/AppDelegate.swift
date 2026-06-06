@@ -110,6 +110,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSWindow.allowsAutomaticWindowTabbing = false
 
+        // 在任何 SwiftUI 视图创建前设置 appearance，避免 NSTextView textColor 被 AppKit 覆盖
+        // ContentView.task 中的 applyAppearance() 仍保留作为兜底
+        let appearanceMode = SettingsModel.shared.appearanceMode
+        if let nsAppearance = appearanceMode.nsAppearance {
+            NSApp.appearance = nsAppearance
+        }
+
         didFinishLaunching = true
         logger.info("applicationDidFinishLaunching — pendingFile: \(self.pendingOpenFileURL != nil), pendingDir: \(self.pendingOpenDirectoryURL != nil)")
 
