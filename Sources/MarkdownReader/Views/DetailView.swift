@@ -442,7 +442,10 @@ struct DetailView: View {
                 fileURL: documentViewModel.currentFileURL,
                 isActive: documentViewModel.displayMode == .raw,
                 isFindBarVisible: appViewModel.isFindBarVisible,
-                searchRef: textViewSearchRef
+                searchRef: textViewSearchRef,
+                onCursorLineNumberChanged: { lineNumber in
+                    documentViewModel.cursorLineNumber = lineNumber
+                }
             )
             .opacity(documentViewModel.displayMode == .raw ? 1 : 0)
             .allowsHitTesting(documentViewModel.displayMode == .raw)

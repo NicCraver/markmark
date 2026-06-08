@@ -1,4 +1,6 @@
 (function() {
+  let _mermaidRenderId = 0;
+
   const MR = {
     version: '2.0.0',
 
@@ -76,25 +78,61 @@
       };
     },
 
+    _resolveThemeColors() {
+      const scriptTag = document.querySelector('script[src*="markdown-reader.js"]');
+      const isDark = scriptTag ? scriptTag.dataset.isDark === 'true' : true;
+
+      // Mermaid strips var() refs (sanitizeDirective) and khroma needs hex for adjust/darken/invert.
+      const style = getComputedStyle(document.documentElement);
+      const resolve = (v) => {
+        if (!v || !v.startsWith('var(')) return v;
+        const inner = v.slice(4, v.lastIndexOf(')')).trim();
+        const name = inner.includes(',') ? inner.slice(0, inner.indexOf(',')).trim() : inner;
+        let resolved = style.getPropertyValue(name).trim();
+        if (resolved.startsWith('var(')) resolved = resolve(resolved);
+        return resolved || v;
+      };
+
+      const toHex = (cssColor) => {
+        if (!cssColor || cssColor.startsWith('#')) return cssColor;
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.fillStyle = cssColor;
+        return ctx.fillStyle;
+      };
+
+      return {
+        isDark,
+        themeVariables: {
+          primaryColor: toHex(resolve('var(--accent)')),
+          primaryTextColor: toHex(resolve('var(--ink)')),
+          primaryBorderColor: toHex(resolve('var(--border)')),
+          lineColor: toHex(resolve('var(--fg-muted)')),
+          secondaryColor: toHex(resolve('var(--bg-elevated)')),
+          tertiaryColor: toHex(resolve('var(--bg-subtle)'))
+        }
+      };
+    },
+
+    _showMermaidError(container, msg) {
+      container.innerHTML = '';
+      const errBox = document.createElement('div');
+      errBox.className = 'mermaid-error';
+      errBox.innerHTML = '<strong>Mermaid</strong> — ' + msg;
+      container.appendChild(errBox);
+    },
+
     renderMermaid() {
       const mermaidBlocks = document.querySelectorAll('code.language-mermaid, pre code.language-mermaid');
       if (mermaidBlocks.length === 0) return;
       if (typeof mermaid === 'undefined') return;
 
-      const scriptTag = document.querySelector('script[src*="markdown-reader.js"]');
-      const isDark = scriptTag ? scriptTag.dataset.isDark === 'true' : true;
+      const renderId = ++_mermaidRenderId;
+      const { isDark, themeVariables } = MR._resolveThemeColors();
 
       mermaid.initialize({
         startOnLoad: false,
         theme: isDark ? 'dark' : 'default',
-        themeVariables: {
-          primaryColor: 'var(--accent)',
-          primaryTextColor: 'var(--ink)',
-          primaryBorderColor: 'var(--border)',
-          lineColor: 'var(--fg-muted)',
-          secondaryColor: 'var(--bg-elevated)',
-          tertiaryColor: 'var(--bg-subtle)'
-        }
+        themeVariables
       });
 
       mermaidBlocks.forEach(block => {
@@ -102,6 +140,7 @@
         if (!pre || pre.tagName !== 'PRE') return;
         const container = document.createElement('div');
         container.className = 'mermaid-container';
+        container.dataset.mermaidSource = block.textContent;
         const mermaidDiv = document.createElement('div');
         mermaidDiv.className = 'mermaid';
         mermaidDiv.textContent = block.textContent;
@@ -109,7 +148,64 @@
         pre.replaceWith(container);
       });
 
-      mermaid.run();
+      mermaid.run({ suppressErrors: true }).then(() => {
+        if (renderId !== _mermaidRenderId) return;
+        document.querySelectorAll('.mermaid-container').forEach(container => {
+          const svg = container.querySelector('svg');
+          if (svg) {
+            const errorEl = svg.querySelector('.error-icon, [id*="error"]');
+            if (errorEl) MR._showMermaidError(container, '图表语法错误，请检查语法是否正确。');
+          } else {
+            const unprocessed = container.querySelector('div.mermaid:not([data-processed])');
+            if (unprocessed) MR._showMermaidError(container, '图表渲染失败。');
+          }
+        });
+      }).catch(err => {
+        if (renderId !== _mermaidRenderId) return;
+        console.error('[MarkdownReader] Mermaid render error:', err);
+        document.querySelectorAll('.mermaid-container').forEach(container => {
+          if (!container.querySelector('svg')) {
+            MR._showMermaidError(container, '图表渲染失败。');
+          }
+        });
+      });
+    },
+
+    rerenderMermaid() {
+      const containers = document.querySelectorAll('.mermaid-container');
+      if (containers.length === 0) return;
+      if (typeof mermaid === 'undefined') return;
+
+      const renderId = ++_mermaidRenderId;
+      const { isDark, themeVariables } = MR._resolveThemeColors();
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: isDark ? 'dark' : 'default',
+        themeVariables
+      });
+
+      containers.forEach(container => {
+        const source = container.dataset.mermaidSource;
+        if (!source) return;
+        container.innerHTML = '';
+        const mermaidDiv = document.createElement('div');
+        mermaidDiv.className = 'mermaid';
+        mermaidDiv.textContent = source;
+        container.appendChild(mermaidDiv);
+      });
+
+      mermaid.run({ suppressErrors: true }).then(() => {
+        if (renderId !== _mermaidRenderId) return;
+        document.querySelectorAll('.mermaid-container').forEach(container => {
+          if (!container.querySelector('svg')) {
+            MR._showMermaidError(container, '图表渲染失败。');
+          }
+        });
+      }).catch(err => {
+        if (renderId !== _mermaidRenderId) return;
+        console.error('[MarkdownReader] Mermaid rerender error:', err);
+      });
     },
 
     renderKaTeX() {

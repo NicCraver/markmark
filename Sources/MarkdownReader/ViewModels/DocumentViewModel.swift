@@ -74,6 +74,10 @@ final class DocumentViewModel {
     /// 大纲导航滚动请求（非 nil 时触发滚动，滚动后应清空）
     var scrollToLineRequest: Int?
 
+    /// 当前光标所在行号（1-based），Raw 模式下由编辑器实时更新
+    /// 与 HTML data-line 属性和 OutlineItem.lineNumber 使用相同约定
+    var cursorLineNumber: Int = 1
+
     /// Per-file 内容缓存：保存未写入磁盘的编辑内容
     /// 切换文件时保存当前内容，切换回来时恢复缓存内容
     /// 确保 per-file UndoManager 的 undo 动作与内容一致
@@ -202,10 +206,15 @@ final class DocumentViewModel {
 
     /// 切换显示模式
     func switchDisplayMode(_ mode: DisplayMode) {
+        let previousMode = displayMode
         displayMode = mode
         // 同步更新缓存，确保切换文件后能恢复正确的模式
         if let url = currentFileURL {
             displayModeCache[url] = mode
+        }
+        // 从 Raw 切到 Rendered 时，同步光标位置到渲染视图
+        if previousMode == .raw && mode == .rendered {
+            requestScrollToLine(cursorLineNumber)
         }
     }
 

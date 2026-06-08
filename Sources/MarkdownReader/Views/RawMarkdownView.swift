@@ -12,6 +12,7 @@ struct RawMarkdownView: View {
     var isActive: Bool = false
     var isFindBarVisible: Bool = false
     var searchRef: TextViewSearchRef?
+    var onCursorLineNumberChanged: ((Int) -> Void)?
     @Environment(\.themeColors) private var themeColors
 
     var body: some View {
@@ -24,7 +25,8 @@ struct RawMarkdownView: View {
             fileURL: fileURL,
             isActive: isActive,
             searchRef: searchRef,
-            isFindBarVisible: isFindBarVisible
+            isFindBarVisible: isFindBarVisible,
+            onCursorLineNumberChanged: onCursorLineNumberChanged
         )
         .background(themeColors.surface)
     }

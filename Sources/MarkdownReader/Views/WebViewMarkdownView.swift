@@ -171,6 +171,7 @@ struct WebViewMarkdownView: View {
         Task { @MainActor [escaped] in
             do {
                 _ = try await page.callJavaScript("document.getElementById('mr-theme-style').textContent = '\(escaped)'")
+                _ = try await page.callJavaScript("MR.rerenderMermaid()")
             } catch {
                 print("[MarkdownReader] updateThemeCSS failed: \(error)")
             }

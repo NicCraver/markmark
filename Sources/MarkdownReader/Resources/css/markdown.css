@@ -174,11 +174,24 @@ del {
 input[type="checkbox"] {
   margin-right: 6px;
   accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  transform: scale(1.15);
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
 }
 
 .task-list-item {
   list-style: none;
   margin-left: -1.5em;
+}
+
+.task-list-item > p {
+  display: inline;
 }
 
 .task-list-item + .task-list-item {
@@ -192,6 +205,17 @@ input[type="checkbox"] {
   border-radius: calc(var(--border-radius) + 2px);
   padding: 16px;
   border: 1px solid var(--border);
+}
+
+.mermaid-error {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  border: 1px solid #e74c3c;
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  font-size: 0.9em;
+  text-align: center;
 }
 
 .katex-display {

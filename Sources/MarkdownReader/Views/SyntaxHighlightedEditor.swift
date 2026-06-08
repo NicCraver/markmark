@@ -258,6 +258,8 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
     var searchRef: TextViewSearchRef?
     /// 查找面板是否可见，可见时不抢占焦点
     var isFindBarVisible: Bool = false
+    /// 光标行号变化回调（0-based 行号）
+    var onCursorLineNumberChanged: ((Int) -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -565,6 +567,8 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
             // 更新绑定
             parent.content = newContent
 
+            notifyCursorLineNumber(textView)
+
             // 防抖高亮：延迟 50ms 重新高亮，避免每次按键都触发
             highlightWorkItem?.cancel()
             let item = DispatchWorkItem { [weak self] in
@@ -572,6 +576,20 @@ struct SyntaxHighlightedEditor: NSViewRepresentable {
             }
             highlightWorkItem = item
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: item)
+        }
+
+        func textViewDidChangeSelection(_ notification: Notification) {
+            guard let textView = textView else { return }
+            notifyCursorLineNumber(textView)
+        }
+
+        @MainActor
+        private func notifyCursorLineNumber(_ textView: NSTextView) {
+            let location = textView.selectedRange().location
+            let text = textView.string
+            // 1-based line number, consistent with HTML data-line and OutlineItem.lineNumber
+            let lineNumber = text[..<text.index(text.startIndex, offsetBy: min(location, text.count))].components(separatedBy: "\n").count
+            parent.onCursorLineNumberChanged?(lineNumber)
         }
 
         @MainActor
