@@ -203,7 +203,7 @@ enum L10n {
     // MARK: - 翻译字典
 
     private static let en: [Key: String] = [
-        .appName: "Markdown Reader 2",
+        .appName: "Markdown Reader",
         .settingsMenuLabel: "Settings\u{2026}",
         .settingsBackToApp: "Back to App",
         .settingsTabGeneral: "General",
@@ -218,9 +218,9 @@ enum L10n {
         .settingsGeneralShowHiddenFiles: "Show hidden files",
         .settingsGeneralShowNonMarkdownFiles: "Show non-Markdown files",
         .settingsGeneralDefaultOpenerTitle: "Default Markdown Opener",
-        .settingsGeneralDefaultOpenerDesc: "Set Markdown Reader 2 as the default application for opening .md files.",
+        .settingsGeneralDefaultOpenerDesc: "Set Markdown Reader as the default application for opening .md files.",
         .settingsGeneralSetAsDefault: "Set as Default",
-        .settingsGeneralIsDefault: "Markdown Reader 2 is the default Markdown opener",
+        .settingsGeneralIsDefault: "Markdown Reader is the default Markdown opener",
         .settingsGeneralSetDefaultFailed: "Failed to set as default opener. Please try again.",
         .settingsAppearanceThemeTitle: "Theme",
         .settingsAppearanceThemeDesc: "Choose the application appearance mode.",
@@ -310,7 +310,7 @@ enum L10n {
         .updateAvailableTitle: "Update Available",
         .updateAvailableVersion: "Version {version}",
         .updateChecking: "Checking for updates\u{2026}",
-        .updateUpToDate: "Markdown Reader 2 is up to date.",
+        .updateUpToDate: "Markdown Reader is up to date.",
         .updateDownload: "Download",
         .updateDownloading: "Downloading update\u{2026}",
         .updateDownloadComplete: "Download complete. Click Install to continue.",
@@ -339,7 +339,7 @@ enum L10n {
     ]
 
     private static let zhCN: [Key: String] = [
-        .appName: "Markdown Reader 2",
+        .appName: "Markdown Reader",
         .settingsMenuLabel: "设置\u{2026}",
         .settingsBackToApp: "返回应用",
         .settingsTabGeneral: "通用",
@@ -354,9 +354,9 @@ enum L10n {
         .settingsGeneralShowHiddenFiles: "显示隐藏文件",
         .settingsGeneralShowNonMarkdownFiles: "显示非 Markdown 文件",
         .settingsGeneralDefaultOpenerTitle: "默认 Markdown 打开程序",
-        .settingsGeneralDefaultOpenerDesc: "将 Markdown Reader 2 设置为 .md 文件的默认打开程序。",
+        .settingsGeneralDefaultOpenerDesc: "将 Markdown Reader 设置为 .md 文件的默认打开程序。",
         .settingsGeneralSetAsDefault: "设为默认",
-        .settingsGeneralIsDefault: "Markdown Reader 2 已是默认 Markdown 打开程序",
+        .settingsGeneralIsDefault: "Markdown Reader 已是默认 Markdown 打开程序",
         .settingsGeneralSetDefaultFailed: "设置默认打开程序失败，请重试。",
         .settingsAppearanceThemeTitle: "主题",
         .settingsAppearanceThemeDesc: "选择应用的外观模式。",
@@ -446,7 +446,7 @@ enum L10n {
         .updateAvailableTitle: "发现新版本",
         .updateAvailableVersion: "版本 {version}",
         .updateChecking: "正在检查更新\u{2026}",
-        .updateUpToDate: "Markdown Reader 2 已是最新版本。",
+        .updateUpToDate: "Markdown Reader 已是最新版本。",
         .updateDownload: "下载",
         .updateDownloading: "正在下载更新\u{2026}",
         .updateDownloadComplete: "下载完成，点击「安装」继续。",
@@ -475,7 +475,7 @@ enum L10n {
     ]
 
     private static let zhTW: [Key: String] = [
-        .appName: "Markdown Reader 2",
+        .appName: "Markdown Reader",
         .settingsMenuLabel: "設定\u{2026}",
         .settingsBackToApp: "返回應用",
         .settingsTabGeneral: "一般",
@@ -490,9 +490,9 @@ enum L10n {
         .settingsGeneralShowHiddenFiles: "顯示隱藏檔案",
         .settingsGeneralShowNonMarkdownFiles: "顯示非 Markdown 檔案",
         .settingsGeneralDefaultOpenerTitle: "預設 Markdown 開啟程式",
-        .settingsGeneralDefaultOpenerDesc: "將 Markdown Reader 2 設為 .md 檔案的預設開啟程式。",
+        .settingsGeneralDefaultOpenerDesc: "將 Markdown Reader 設為 .md 檔案的預設開啟程式。",
         .settingsGeneralSetAsDefault: "設為預設",
-        .settingsGeneralIsDefault: "Markdown Reader 2 已是預設 Markdown 開啟程式",
+        .settingsGeneralIsDefault: "Markdown Reader 已是預設 Markdown 開啟程式",
         .settingsGeneralSetDefaultFailed: "設定預設開啟程式失敗，請重試。",
         .settingsAppearanceThemeTitle: "主題",
         .settingsAppearanceThemeDesc: "選擇應用的外觀模式。",
@@ -582,7 +582,7 @@ enum L10n {
         .updateAvailableTitle: "發現新版本",
         .updateAvailableVersion: "版本 {version}",
         .updateChecking: "正在檢查更新\u{2026}",
-        .updateUpToDate: "Markdown Reader 2 已是最新版本。",
+        .updateUpToDate: "Markdown Reader 已是最新版本。",
         .updateDownload: "下載",
         .updateDownloading: "正在下載更新\u{2026}",
         .updateDownloadComplete: "下載完成，點擊「安裝」繼續。",

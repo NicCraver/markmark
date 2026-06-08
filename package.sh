@@ -40,7 +40,7 @@ build_dmg() {
     if command -v create-dmg &>/dev/null; then
         echo "📦 使用 create-dmg 打包 DMG..."
         CREATE_DMG_ARGS=(
-            --volname "Markdown Reader 2"
+            --volname "Markdown Reader"
             --window-pos 200 120
             --window-size 600 400
             --icon-size 100
@@ -58,7 +58,7 @@ build_dmg() {
         trap "rm -rf '$STAGING'" EXIT
         cp -R "${APP_NAME}.app" "$STAGING/"
         ln -s /Applications "$STAGING/Applications"
-        hdiutil create -volname "Markdown Reader 2" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
+        hdiutil create -volname "Markdown Reader" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
         rm -rf "$STAGING"
         trap - EXIT
     fi

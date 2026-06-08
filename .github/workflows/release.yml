@@ -19,7 +19,7 @@ on:
 env:
   SCHEME: MarkdownReader
   PRODUCT_NAME: MarkdownReader
-  BUNDLE_ID: com.markdownreader.app.v2
+  BUNDLE_ID: com.markdownreader.app
 
 permissions:
   contents: write

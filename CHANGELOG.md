@@ -11,7 +11,7 @@
 
 - 渲染引擎从 Textual 迁移到 cmark-gfm + WebView
 - 最低部署目标从 macOS 15.0 提升到 macOS 26
-- Bundle ID 变更为 com.markdownreader.app.v2（设置隔离）
+- Bundle ID 保持 com.markdownreader.app（单线发布，不再隔离）
 
 ## [1.0.10] - 2026-06-06
 
