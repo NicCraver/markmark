@@ -59,7 +59,7 @@ public enum ThemeType: String, Codable, Sendable, CaseIterable {
 /// 所有预设主题，逐字对照 buddy-macos docs/theme-scheme.md 第五节
 public enum PresetThemes {
 
-    // MARK: - 深色主题（15 个原生 + 4 个 MPE）
+    // MARK: - 深色主题（15 个原生 + 5 个 MPE）
 
     public static let darkThemes: [ThemeDefinition] = [
         ThemeDefinition(id: "buddy-dark", name: "Default Dark", type: .dark,

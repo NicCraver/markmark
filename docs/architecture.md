@@ -2,7 +2,7 @@
 
 ## 1. 架构总览
 
-采用 SwiftUI 原生的声明式架构，遵循 MVVM 模式。应用以单窗口为主，自定义三栏布局（HStack + DragGesture）：左侧 Sidebar 目录树 + 中间内容区 + 右侧大纲面板。窗口使用 `.windowStyle(.hiddenTitleBar)` 隐藏系统标题栏，通过自定义 TitleBar 视图实现工具栏功能。使用 `@Observable` (macOS 15.0+) 进行状态管理，Swift 6.0 严格并发。
+采用 SwiftUI 原生的声明式架构，遵循 MVVM 模式。应用以单窗口为主，自定义三栏布局（HStack + DragGesture）：左侧 Sidebar 目录树 + 中间内容区 + 右侧大纲面板。窗口使用 `.windowStyle(.hiddenTitleBar)` 隐藏系统标题栏，通过自定义 TitleBar 视图实现工具栏功能。使用 `@Observable` (macOS 26+) 进行状态管理，Swift 6.0 严格并发。
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -34,14 +34,14 @@ ContentView (HStack)
 
 | 组件 | 选择 | 理由 |
 |------|------|------|
-| UI 框架 | SwiftUI | macOS 原生，声明式，与 Textual 无缝集成 |
-| Markdown 渲染 | Textual (gonzalezreal/textual v0.3.1+) | MarkdownUI 的官方继任者，使用 Foundation AttributedString 原生解析（无 cmark-gfm 依赖），原生支持文本选择和语法高亮 |
+| UI 框架 | SwiftUI | macOS 原生，声明式 |
+| Markdown 渲染 | cmark-gfm + WKWebView (v2.x) | 完整 GFM 扩展语法，支持 Mermaid/PlantUML/KaTeX/Prism.js，替代 Textual |
 | 目录树 | 递归 DisclosureGroup | 原生树形展示方案，支持自定义行样式 |
 | 布局 | 自定义 HStack + NSViewRepresentable ResizeHandle | 支持自定义拖拽阈值（140px 自动隐藏）、单文件模式无 Sidebar、圆角 Detail 区域；NavigationSplitView 无法满足这些需求；SwiftUI DragGesture 在 macOS 上不可靠 |
 | 窗口样式 | .windowStyle(.hiddenTitleBar) | 支持自定义 TitleBar 视图和圆角 Detail 区域；系统 NSToolbar 无法实现 Buddy 风格布局 |
 | 文件系统 | FileManager + URL | 原生文件访问 |
 | 异步 | Swift Concurrency (async/await) | 现代异步方案，Swift 6 严格并发检查 |
-| 状态管理 | @Observable (macOS 15.0+) | macOS 15.0 原生支持，更简洁的观察机制 |
+| 状态管理 | @Observable (macOS 26+) | macOS 26 原生支持，更简洁的观察机制 |
 | 本地化 | 自定义字典方案 | 不依赖 Apple String Catalog，灵活支持动态语言切换 |
 | Git 集成 | Process + /usr/bin/git | 轻量级，无需额外依赖 |
 
@@ -49,7 +49,7 @@ ContentView (HStack)
 
 ### 3.1 App 层
 
-- **MarkdownReaderApp**: 应用入口，WindowGroup 配置（`.windowStyle(.hiddenTitleBar)` + `.defaultSize(width: 900, height: 600)`），最低部署目标 macOS 15.0
+- **MarkdownReaderApp**: 应用入口，WindowGroup 配置（`.windowStyle(.hiddenTitleBar)` + `.defaultSize(width: 900, height: 600)`），最低部署目标 macOS 26
   - `onOpenURL` 处理 Finder 双击打开
   - 菜单命令：Cmd+, (设置)、Cmd+O (打开)、Cmd+\ (切换 Sidebar)、Cmd+Shift+E/R (渲染/原文)
   - 6 个 Notification.Name 常量：toggleSidebar, switchToRendered, switchToRaw, openDirectory, openFile, toggleSettings
@@ -66,7 +66,7 @@ ContentView (HStack)
 | OutlineResizeHandle | 大纲面板拖拽调整宽度（拖拽方向与 ResizeHandle 相反） |
 | ResizeHandle | Sidebar 边缘分隔线 + 拖拽调整宽度（NSViewRepresentable + NSView 鼠标事件） |
 | SettingsView | 设置视图，两栏布局（General / Appearance） |
-| RenderedMarkdownView | Markdown 渲染显示视图（Textual StructuredText） |
+| RenderedMarkdownView | Markdown 渲染显示视图（WKWebView + cmark-gfm） |
 | RawMarkdownView | Markdown 原文显示视图（TextEditor + SF Mono） |
 | ProjectStatusView | 底部 Git 状态栏（分支、变更、commit+push） |
 | TrafficLightButtons | 自定义窗口控制按钮（close/minimize/zoom），hover 显示图标 |
@@ -92,7 +92,7 @@ ContentView (HStack)
 | FileError | 错误类型枚举：permissionDenied, encodingError, fileNotFound, unsupportedFileType, unknown |
 | OutlineItem | 大纲项模型：level (1-6), title, lineNumber |
 | SettingsModel | 设置单例（@Observable + UserDefaults）：语言、显示模式、主题、字号、边距等 11+ 配置项 |
-| ThemeDefinition | 主题定义：5 核心色 + 对比度；PresetThemes 枚举定义 23 套预设；ThemeCustomOverrides 支持自定义覆盖 |
+| ThemeDefinition | 主题定义：5 核心色 + 对比度；PresetThemes 枚举定义 33 套预设（20 深色 + 13 浅色）；ThemeCustomOverrides 支持自定义覆盖 |
 
 ### 3.5 服务层 (Services)
 
@@ -136,7 +136,7 @@ MarkdownReaderApp (.windowStyle(.hiddenTitleBar))
         └── DetailView (圆角容器)
               ├── TrafficLightButtons (if !isSidebarVisible)
               ├── TitleBar (内嵌于 DetailView)
-              ├── RenderedMarkdownView (Textual StructuredText)
+              ├── RenderedMarkdownView (WKWebView + cmark-gfm)
               ├── RawMarkdownView (TextEditor)
               ├── WelcomeView
               ├── ErrorView
@@ -168,12 +168,15 @@ LocalizationService
 ```
 
 外部依赖：
-- Textual: `https://github.com/gonzalezreal/textual` v0.3.1+ (SPM)
+- Textual: `https://github.com/gonzalezreal/textual` v0.3.1+ (SPM) — 过渡期保留，v2.x 渲染已迁移至 cmark-gfm + WKWebView
   - 许可证：MIT
-  - Swift 6.0 + macOS 15.0+
+  - Swift 6.0 + macOS 26+
   - 依赖：swift-concurrency-extras 1.4.0, swiftui-math 0.1.0
-  - Markdown 解析基于 Foundation AttributedString（无 cmark-gfm 依赖）
-  - 内置语法高亮、文本选择支持
+- cmark-gfm: 内嵌 C 源码，GFM 扩展解析
+- Mermaid.js: 本地打包，图表渲染
+- KaTeX: 本地打包，数学公式渲染
+- Prism.js: 本地打包，代码语法高亮
+- PlantUML: 在线渲染（需网络），SVG 输出
 
 ## 6. 关键设计决策
 
@@ -181,8 +184,8 @@ LocalizationService
 |------|------|------|------|
 | 布局方案 | 自定义 HStack + NSViewRepresentable ResizeHandle | NavigationSplitView | 支持自定义拖拽阈值（140px 自动隐藏 Sidebar）、单文件模式无 Sidebar、圆角 Detail 区域；SwiftUI DragGesture 在 macOS 上不可靠 |
 | 窗口样式 | .windowStyle(.hiddenTitleBar) + 内嵌 TitleBar | 系统 NSToolbar (.toolbar) | 支持圆角 Detail 区域和自定义拖拽区域；系统 .toolbar 无法实现 Buddy 风格布局 |
-| Markdown 渲染 | Textual (v0.3.1+) | MarkdownUI / 自研渲染 | MarkdownUI 的官方继任者，Foundation AttributedString 原生解析（无 cmark-gfm 依赖），原生文本选择 |
-| 状态管理 | @Observable (macOS 15.0+) | ObservableObject | macOS 15.0 原生支持，更简洁，无需 @Published |
+| Markdown 渲染 | cmark-gfm + WKWebView (v2.x) | Textual / MarkdownUI | 完整 GFM 扩展，支持 Mermaid/PlantUML/KaTeX/Prism.js，WKWebView 原生选择 |
+| 状态管理 | @Observable (macOS 26+) | ObservableObject | macOS 26 原生支持，更简洁，无需 @Published |
 | 目录树渲染 | 递归 DisclosureGroup | OutlineGroup | 更灵活的自定义行样式控制 |
 | 本地化方案 | 自定义字典 + Environment | Apple String Catalog | 支持动态语言切换，不依赖编译时字符串目录 |
 | 主题系统 | 5 核心色 + 对比度派生 | 固定色值方案 | 少量基础色派生大量语义 token，统一调性，自定义覆盖回退到基础主题 |
@@ -193,8 +196,7 @@ LocalizationService
 ## 7. 已知注意事项
 
 - **视图重建**：同一类型视图替换内容时 SwiftUI 可能不触发 `.onAppear`，需用 `.id(fileURL)` 强制重建视图
-- **Textual v0.x API 稳定性**：Textual 处于 v0.x 阶段，API 可能有小幅变化；锁定小版本号 `.upToNextMinor(from: "0.3.1")`
-- **Textual 大文件性能**：使用 Foundation AttributedString 原生解析，理论上优于 cmark-gfm，但需实测 500KB+ 文件的滚动性能
+- **WKWebView 渲染**：JS/CSS 资源已本地打包，Mermaid/KaTeX/Prism.js 无需网络；PlantUML 需要网络连接
 - **Swift 6 严格并发**：需处理 Sendable 合规性和 actor 隔离，ViewModel 需标注 `@MainActor`
 - **自定义布局窗口 resize 状态同步**：窗口 resize 时需注意 sidebarWidth 累积偏移问题
 - **全屏模式适配**：`.hiddenTitleBar` 模式下全屏时需处理红绿灯行为（红绿灯区域宽度从 76px 变为 32px）和 TitleBar 的自动隐藏/显示

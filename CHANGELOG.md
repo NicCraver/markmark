@@ -5,6 +5,15 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.1] - 2026-06-08
+
+### 变更
+
+- **文档更新**：README、CLAUDE.md、架构文档、需求文档同步 v2.0 渲染引擎迁移变更
+- **官网更新**：GitHub Pages 更新至 v2.0.0，新增 Quick Look、Mermaid & PlantUML、数学公式、命令行工具等功能展示
+- **MPE 预设主题补充**：网站主题预览从 23 套更新为 33 套（新增 5 深色 + 5 浅色 MPE 主题）
+- **下载页更新**：系统要求更新为 macOS 26+ (Tahoe)，架构标注更新为 Apple Silicon 原生支持
+
 ## [2.0.0] - 2026-06-08
 
 ### 新增
@@ -13,7 +22,9 @@
 - **Mermaid 图表渲染**：渲染视图支持 Mermaid 流程图、时序图、甘特图等图表类型，支持主题颜色同步和语法错误检测
 - **KaTeX 数学公式**：渲染视图支持 LaTeX 行内公式（`$...$`）和块级公式（`$$...$$`），使用 KaTeX 本地渲染
 - **Prism.js 代码高亮**：渲染视图使用 Prism.js 实现 30+ 语言的语法高亮，替代 Textual 内置高亮
-- **MPE 预设主题**：新增 6 套 Markdown Preview Enhanced 风格预设主题
+- **MPE 预设主题**：新增 10 套 Markdown Preview Enhanced 风格预设主题（5 深色 + 5 浅色）
+- **PlantUML 图表渲染**：渲染视图支持 PlantUML 语法，自动渲染为 SVG 图表（需要网络）
+- **Quick Look 预览扩展**：Finder 中选中 .md 文件按空格即可预览渲染效果，无需打开应用
 - **命令行工具 mdr**：支持在终端安装/卸载 `mdr` 命令，直接从命令行打开 Markdown 文件
 - **渲染内容最大宽度跟随窗口**：新增设置选项，渲染内容宽度可跟随窗口自适应
 - **Raw→Rendered 光标同步**：切换渲染/原文模式时自动同步光标位置

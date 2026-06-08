@@ -14,6 +14,11 @@
   {"id": "material-palenight", "name": "Material Palenight", "type": "dark", "surface": "#292d3e", "ink": "#eeffff", "accent": "#80cbc4", "success": "#c3e88d", "danger": "#ff5370", "contrast": 58},
   {"id": "ayu-dark", "name": "Ayu Dark", "type": "dark", "surface": "#0b0e14", "ink": "#bfbdb6", "accent": "#e6b450", "success": "#c2d94c", "danger": "#f07178", "contrast": 55},
   {"id": "vitesse-dark", "name": "Vitesse Dark", "type": "dark", "surface": "#121212", "ink": "#dbd7ca", "accent": "#4d9375", "success": "#80a665", "danger": "#cb7676", "contrast": 55},
+  {"id": "mpe-atom-material", "name": "Atom Material", "type": "dark", "surface": "#263238", "ink": "#eeffff", "accent": "#82aaff", "success": "#c3e88d", "danger": "#f07178", "contrast": 55},
+  {"id": "mpe-gothic", "name": "Gothic", "type": "dark", "surface": "#0e0e0e", "ink": "#c7c7c7", "accent": "#fe5e3a", "success": "#40c977", "danger": "#b33b2e", "contrast": 55},
+  {"id": "mpe-monokai", "name": "Monokai", "type": "dark", "surface": "#282828", "ink": "#f8f8f2", "accent": "#a6e22e", "success": "#a6e22e", "danger": "#f92672", "contrast": 55},
+  {"id": "mpe-night", "name": "Night", "type": "dark", "surface": "#363b40", "ink": "#b8bfc6", "accent": "#e0e0e0", "success": "#dedede", "danger": "#fa423e", "contrast": 55},
+  {"id": "mpe-solarized-dark", "name": "Solarized Dark (MPE)", "type": "dark", "surface": "#002b36", "ink": "#839496", "accent": "#268bd2", "success": "#859900", "danger": "#dc322f", "contrast": 55},
   {"id": "buddy-light", "name": "Default Light", "type": "light", "surface": "#ffffff", "ink": "#1c1c1a", "accent": "#339cff", "success": "#00a240", "danger": "#ba2623", "contrast": 45},
   {"id": "codex-light", "name": "Codex Light", "type": "light", "surface": "#ffffff", "ink": "#1a1c1f", "accent": "#0169cc", "success": "#00a240", "danger": "#ba2623", "contrast": 45},
   {"id": "catppuccin-latte", "name": "Catppuccin Latte", "type": "light", "surface": "#eff1f5", "ink": "#4c4f69", "accent": "#8839ef", "success": "#40a02b", "danger": "#d20f39", "contrast": 45},
@@ -21,5 +26,10 @@
   {"id": "gruvbox-light", "name": "Gruvbox Light", "type": "light", "surface": "#fbf1c7", "ink": "#3c3836", "accent": "#af3a03", "success": "#79740e", "danger": "#9d0006", "contrast": 45},
   {"id": "kanagawa-lotus", "name": "Kanagawa Lotus", "type": "light", "surface": "#f2ecbc", "ink": "#5c5144", "accent": "#c47247", "success": "#6f894e", "danger": "#c34043", "contrast": 45},
   {"id": "one-light", "name": "One Light", "type": "light", "surface": "#fafafa", "ink": "#383a42", "accent": "#526fff", "success": "#50a14f", "danger": "#e45649", "contrast": 45},
-  {"id": "rose-pine-dawn", "name": "Rose Pine Dawn", "type": "light", "surface": "#faf4ed", "ink": "#575279", "accent": "#d7827e", "success": "#286983", "danger": "#b4637a", "contrast": 42}
+  {"id": "rose-pine-dawn", "name": "Rose Pine Dawn", "type": "light", "surface": "#faf4ed", "ink": "#575279", "accent": "#d7827e", "success": "#286983", "danger": "#b4637a", "contrast": 42},
+  {"id": "mpe-atom-light", "name": "Atom Light", "type": "light", "surface": "#ffffff", "ink": "#555555", "accent": "#0088cc", "success": "#00a240", "danger": "#ba2623", "contrast": 42},
+  {"id": "mpe-medium", "name": "Medium", "type": "light", "surface": "#ffffff", "ink": "#333333", "accent": "#1a99da", "success": "#00a240", "danger": "#ba2623", "contrast": 42},
+  {"id": "mpe-newsprint", "name": "Newsprint", "type": "light", "surface": "#fbfbfb", "ink": "#333333", "accent": "#b05a3a", "success": "#00a240", "danger": "#ba2623", "contrast": 42},
+  {"id": "mpe-solarized-light", "name": "Solarized Light (MPE)", "type": "light", "surface": "#fdf6e3", "ink": "#657b83", "accent": "#268bd2", "success": "#859900", "danger": "#dc322f", "contrast": 42},
+  {"id": "mpe-vue", "name": "Vue", "type": "light", "surface": "#ffffff", "ink": "#304455", "accent": "#42b983", "success": "#42b983", "danger": "#ba2623", "contrast": 42}
 ]

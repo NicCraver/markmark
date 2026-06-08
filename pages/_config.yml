@@ -10,8 +10,8 @@ lang: zh-CN
 # MarkdownReader 应用信息
 app:
   name: Markdown Reader
-  version: "1.0.10"
-  macos_version: "15.0"
+  version: "2.0.0"
+  macos_version: "26"
   download_url: "https://github.com/davidhoo/MarkdownReader/releases/latest"
   repo_url: "https://github.com/davidhoo/MarkdownReader"
   license: MIT
