@@ -262,3 +262,60 @@ struct CriticMarkupPipelineTests {
         #expect(result.html.contains("{--literal--}"))
     }
 }
+
+@Suite("CriticMarkup combined highlight+comment")
+struct CriticMarkupCombinedTests {
+    @Test("highlight immediately followed by a comment renders both")
+    func highlightThenComment() {
+        let html = CriticMarkup.renderToHTML("请改{==这一段==}{>>太啰嗦<<}内容")
+        #expect(html.contains("critic-mark"))
+        #expect(html.contains("critic-comment"))
+        #expect(html.contains("太啰嗦"))
+        #expect(html.contains("这一段"))
+    }
+    @Test("full pipeline keeps the comment bubble for a saved comment")
+    func pipelineCombined() {
+        let r = MarkdownHTMLService.render("结论存疑{==这里==}{>>请补充来源<<}。")
+        #expect(r.html.contains("critic-comment"))
+        #expect(r.html.contains("请补充来源"))
+    }
+}
+
+// MARK: - 智能引号容错定位（渲染会把直引号转成弯引号，需归一化匹配）
+
+@Suite("CriticMarkup smart-quote tolerant locate")
+struct CriticMarkupSmartQuoteTests {
+
+    @Test("locates source straight quotes when selection has curly quotes")
+    func locateCurlyAgainstStraight() {
+        let source = "是为\"第五起\"这三个字。"               // 源码：直引号
+        let selected = "是为\u{201C}第五起\u{201D}这三个字"   // 选区：弯引号（渲染产物）
+        let r = CriticMarkup.locateRange(in: source, selectedText: selected, nearLine: 1)
+        #expect(r != nil)
+        #expect(r.map { String(source[$0]) } == "是为\"第五起\"这三个字")
+    }
+
+    @Test("highlight applies across a smart-quote mismatch (keeps source quotes)")
+    func highlightAcrossSmartQuotes() {
+        let source = "前文。是为\"第五起\"这。"
+        let selected = "是为\u{201C}第五起\u{201D}这"
+        let out = CriticMarkup.apply(.highlight, to: source, selectedText: selected, nearLine: 1)
+        #expect(out == "前文。{==是为\"第五起\"这==}。")
+    }
+
+    @Test("comment applies across a smart-quote mismatch")
+    func commentAcrossSmartQuotes() {
+        let source = "是为\"第五起\"这。"
+        let selected = "是为\u{201C}第五起\u{201D}这"
+        let out = CriticMarkup.apply(.comment("注"), to: source, selectedText: selected, nearLine: 1)
+        #expect(out == "{==是为\"第五起\"这==}{>>注<<}。")
+    }
+
+    @Test("single curly quotes / apostrophes also normalize")
+    func singleQuotes() {
+        let source = "it's a 'test'"
+        let selected = "it\u{2019}s a \u{2018}test\u{2019}"
+        let r = CriticMarkup.locateRange(in: source, selectedText: selected, nearLine: 1)
+        #expect(r.map { String(source[$0]) } == "it's a 'test'")
+    }
+}

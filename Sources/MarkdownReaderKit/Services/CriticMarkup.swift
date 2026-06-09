@@ -24,23 +24,47 @@ public enum CriticMarkup {
 
     /// 在 `source` 中定位 `selectedText`，在多处出现时选取最接近 `nearLine`（1 基）的一处。
     /// 找不到或选区为空返回 nil。
+    ///
+    /// 容错：渲染管线（swift-markdown）会把直引号转成弯引号（智能排版），导致渲染视图里
+    /// 选中的文本与源码不再逐字相等。若精确匹配失败，则对引号做「一一对应」的归一化后再匹配，
+    /// 并按字符偏移把结果映射回原始 `source` 区间（归一化是单字符→单字符，偏移可靠）。
     public static func locateRange(in source: String, selectedText: String, nearLine: Int) -> Range<String.Index>? {
         guard !selectedText.isEmpty else { return nil }
 
+        // 第一级：精确匹配
+        if let r = nearestOccurrence(of: selectedText, in: source, nearLine: nearLine) {
+            return r
+        }
+
+        // 第二级：引号归一化匹配（仅当选区确实含可归一化的排版字符时）
+        let normalizedSelected = normalizeTypography(selectedText)
+        guard normalizedSelected != selectedText else { return nil }
+        let normalizedSource = normalizeTypography(source)   // 与 source 字符数一一对应
+        guard let nr = nearestOccurrence(of: normalizedSelected, in: normalizedSource, nearLine: nearLine) else {
+            return nil
+        }
+        let startOffset = normalizedSource.distance(from: normalizedSource.startIndex, to: nr.lowerBound)
+        let endOffset = normalizedSource.distance(from: normalizedSource.startIndex, to: nr.upperBound)
+        let start = source.index(source.startIndex, offsetBy: startOffset)
+        let end = source.index(source.startIndex, offsetBy: endOffset)
+        return start..<end
+    }
+
+    /// 在 `haystack` 中查找 `needle` 的所有出现，返回最接近 `nearLine` 的一处。
+    private static func nearestOccurrence(of needle: String, in haystack: String, nearLine: Int) -> Range<String.Index>? {
         var ranges: [Range<String.Index>] = []
-        var searchStart = source.startIndex
-        while searchStart < source.endIndex,
-              let r = source.range(of: selectedText, range: searchStart..<source.endIndex) {
+        var searchStart = haystack.startIndex
+        while searchStart < haystack.endIndex,
+              let r = haystack.range(of: needle, range: searchStart..<haystack.endIndex) {
             ranges.append(r)
-            // 非重叠搜索：从本次匹配末尾继续
-            searchStart = r.upperBound > r.lowerBound ? r.upperBound : source.index(after: r.lowerBound)
+            searchStart = r.upperBound > r.lowerBound ? r.upperBound : haystack.index(after: r.lowerBound)
         }
         guard !ranges.isEmpty else { return nil }
 
         var best = ranges[0]
         var bestDistance = Int.max
         for r in ranges {
-            let line = source[source.startIndex..<r.lowerBound].reduce(into: 1) { acc, ch in
+            let line = haystack[haystack.startIndex..<r.lowerBound].reduce(into: 1) { acc, ch in
                 if ch == "\n" { acc += 1 }
             }
             let distance = abs(line - nearLine)
@@ -50,6 +74,20 @@ public enum CriticMarkup {
             }
         }
         return best
+    }
+
+    /// 把弯引号 / 智能排版引号归一化为直引号（严格单字符→单字符，保持字符数不变）。
+    private static func normalizeTypography(_ s: String) -> String {
+        String(s.map { ch -> Character in
+            switch ch {
+            case "\u{201C}", "\u{201D}", "\u{201E}", "\u{201F}", "\u{2033}", "\u{301D}", "\u{301E}":
+                return "\""
+            case "\u{2018}", "\u{2019}", "\u{201A}", "\u{201B}", "\u{2032}":
+                return "'"
+            default:
+                return ch
+            }
+        })
     }
 
     // MARK: - 应用标注
