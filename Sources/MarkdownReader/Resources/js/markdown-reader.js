@@ -588,13 +588,29 @@
 
     criticLabels: {
       delete: 'Delete', highlight: 'Highlight', comment: 'Comment', replace: 'Replace',
-      confirm: 'Apply', cancel: 'Cancel', commentHint: 'Add a comment…', replaceHint: 'Replace with…'
+      confirm: 'Apply', cancel: 'Cancel', edit: 'Edit',
+      commentHint: 'Add a comment…', replaceHint: 'Replace with…'
     },
 
     setCriticLabels(labels) {
       if (labels && typeof labels === 'object') {
         MR.criticLabels = Object.assign({}, MR.criticLabels, labels);
       }
+    },
+
+    // 用 CSS Custom Highlight API 给「正在标注」的选区上一层持久高亮，
+    // 这样即使原生选区因为点击工具条/聚焦输入框而消失，用户也能看到刚选的位置。
+    _setPendingHighlight(range) {
+      try {
+        if (!window.CSS || !CSS.highlights || typeof Highlight === 'undefined' || !range) return;
+        MR._clearPendingHighlight();
+        const hl = new Highlight(range.cloneRange());
+        CSS.highlights.set('critic-pending', hl);
+      } catch (e) { /* no-op */ }
+    },
+
+    _clearPendingHighlight() {
+      try { if (window.CSS && CSS.highlights) CSS.highlights.delete('critic-pending'); } catch (e) { /* no-op */ }
     },
 
     _postCriticAction(op, text, line, payload) {
@@ -624,8 +640,10 @@
       bar = document.createElement('div');
       bar.id = 'mr-critic-toolbar';
       document.body.appendChild(bar);
-      // 防止点击工具条本身清除选区
-      bar.addEventListener('mousedown', function(e) { e.preventDefault(); });
+      // 普通模式下防止点击工具条按钮清除选区；输入模式（评论/替换）需允许聚焦输入框
+      bar.addEventListener('mousedown', function(e) {
+        if (!bar.classList.contains('critic-input-mode')) e.preventDefault();
+      });
       return bar;
     },
 
@@ -633,11 +651,13 @@
       const bar = document.getElementById('mr-critic-toolbar');
       if (bar) bar.classList.remove('visible');
       MR._criticPending = null;
+      MR._clearPendingHighlight();
     },
 
-    _showCriticToolbar(rect, text, line) {
+    _showCriticToolbar(range, text, line) {
       const bar = MR._ensureCriticToolbar();
       MR._criticPending = { text: text, line: line };
+      MR._setPendingHighlight(range);
       const L = MR.criticLabels;
       bar.innerHTML = '';
 
@@ -651,11 +671,11 @@
 
       bar.appendChild(mkBtn(L.delete, () => MR._commitCritic('delete')));
       bar.appendChild(mkBtn(L.highlight, () => MR._commitCritic('highlight')));
-      bar.appendChild(mkBtn(L.comment, () => MR._promptCritic('comment', L.commentHint)));
-      bar.appendChild(mkBtn(L.replace, () => MR._promptCritic('replace', L.replaceHint)));
+      bar.appendChild(mkBtn(L.comment, () => MR._promptCritic('comment', L.commentHint, true)));
+      bar.appendChild(mkBtn(L.replace, () => MR._promptCritic('replace', L.replaceHint, false)));
 
       bar.classList.add('visible');
-      MR._positionCriticToolbar(bar, rect);
+      MR._positionCriticToolbar(bar, range.getBoundingClientRect());
     },
 
     _positionCriticToolbar(bar, rect) {
@@ -668,32 +688,51 @@
       bar.style.left = left + 'px';
     },
 
-    _promptCritic(op, hint) {
+    // op: 'comment'(多行 textarea) / 'replace'(单行 input)
+    _promptCritic(op, hint, multiline) {
       const bar = document.getElementById('mr-critic-toolbar');
       if (!bar || !MR._criticPending) return;
       const L = MR.criticLabels;
+      bar.classList.add('critic-input-mode');
       bar.innerHTML = '';
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = hint;
+
+      const field = document.createElement(multiline ? 'textarea' : 'input');
+      if (!multiline) field.type = 'text';
+      field.className = 'critic-field';
+      field.placeholder = hint;
+      if (multiline) field.rows = 3;
+
       const confirm = document.createElement('button');
       confirm.textContent = L.confirm;
       confirm.className = 'critic-primary';
       const cancel = document.createElement('button');
       cancel.textContent = L.cancel;
 
-      const submit = () => MR._commitCritic(op, input.value);
+      const submit = () => {
+        const v = field.value.trim();
+        if (op === 'comment' && !v) { MR._hideCriticToolbar(); return; }
+        MR._commitCritic(op, field.value);
+      };
       confirm.addEventListener('click', submit);
       cancel.addEventListener('click', () => MR._hideCriticToolbar());
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      field.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); }
+        else if (e.key === 'Enter' && !multiline) { e.preventDefault(); submit(); }
         else if (e.key === 'Escape') { e.preventDefault(); MR._hideCriticToolbar(); }
       });
 
-      bar.appendChild(input);
-      bar.appendChild(cancel);
-      bar.appendChild(confirm);
-      setTimeout(() => input.focus(), 0);
+      const row = document.createElement('div');
+      row.className = 'critic-input-row';
+      row.appendChild(field);
+      const btns = document.createElement('div');
+      btns.className = 'critic-input-btns';
+      btns.appendChild(cancel);
+      btns.appendChild(confirm);
+      bar.appendChild(row);
+      bar.appendChild(btns);
+      // 重新定位（输入态尺寸变化）+ 聚焦
+      if (MR._criticRange) MR._positionCriticToolbar(bar, MR._criticRange.getBoundingClientRect());
+      setTimeout(() => field.focus(), 0);
     },
 
     _commitCritic(op, payload) {
@@ -702,14 +741,126 @@
       MR._postCriticAction(op, p.text, p.line, payload);
       const sel = window.getSelection();
       if (sel) sel.removeAllRanges();
+      const bar = document.getElementById('mr-critic-toolbar');
+      if (bar) bar.classList.remove('critic-input-mode');
       MR._hideCriticToolbar();
+    },
+
+    // ===== 已有评论：查看 / 编辑 / 删除 =====
+
+    _ensureCommentPopover() {
+      let pop = document.getElementById('mr-critic-popover');
+      if (pop) return pop;
+      pop = document.createElement('div');
+      pop.id = 'mr-critic-popover';
+      document.body.appendChild(pop);
+      pop.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+      return pop;
+    },
+
+    _hideCommentPopover() {
+      const pop = document.getElementById('mr-critic-popover');
+      if (pop) pop.classList.remove('visible');
+      MR._criticPopoverEl = null;
+    },
+
+    _positionCriticPopover(pop, rect) {
+      const r = pop.getBoundingClientRect();
+      let top = rect.bottom + 6;
+      if (top + r.height > window.innerHeight - 4) top = Math.max(4, rect.top - r.height - 6);
+      let left = rect.left + (rect.width / 2) - (r.width / 2);
+      left = Math.max(4, Math.min(left, window.innerWidth - r.width - 4));
+      pop.style.top = top + 'px';
+      pop.style.left = left + 'px';
+    },
+
+    _showCommentPopover(el) {
+      const pop = MR._ensureCommentPopover();
+      MR._criticPopoverEl = el;
+      const L = MR.criticLabels;
+      const comment = el.dataset.comment || '';
+      const line = MR._criticLineFor(el);
+      pop.innerHTML = '';
+      pop.classList.remove('critic-input-mode');
+
+      const textBox = document.createElement('div');
+      textBox.className = 'critic-popover-text';
+      textBox.textContent = comment;
+
+      const btns = document.createElement('div');
+      btns.className = 'critic-input-btns';
+      const editBtn = document.createElement('button');
+      editBtn.textContent = L.edit;
+      editBtn.className = 'critic-primary';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = L.delete;
+      delBtn.className = 'critic-danger';
+
+      editBtn.addEventListener('click', () => MR._editCommentPopover(el, comment, line));
+      delBtn.addEventListener('click', () => {
+        MR._postCriticAction('deleteComment', comment, line, null);
+        MR._hideCommentPopover();
+      });
+
+      btns.appendChild(delBtn);
+      btns.appendChild(editBtn);
+      pop.appendChild(textBox);
+      pop.appendChild(btns);
+      pop.classList.add('visible');
+      MR._positionCriticPopover(pop, el.getBoundingClientRect());
+    },
+
+    _editCommentPopover(el, oldComment, line) {
+      const pop = MR._ensureCommentPopover();
+      const L = MR.criticLabels;
+      pop.innerHTML = '';
+      pop.classList.add('critic-input-mode');
+
+      const field = document.createElement('textarea');
+      field.className = 'critic-field';
+      field.rows = 3;
+      field.value = oldComment;
+
+      const btns = document.createElement('div');
+      btns.className = 'critic-input-btns';
+      const cancel = document.createElement('button');
+      cancel.textContent = L.cancel;
+      const save = document.createElement('button');
+      save.textContent = L.confirm;
+      save.className = 'critic-primary';
+
+      const submit = () => {
+        const v = field.value.trim();
+        if (!v) {
+          MR._postCriticAction('deleteComment', oldComment, line, null);
+        } else if (v !== oldComment) {
+          MR._postCriticAction('editComment', oldComment, line, field.value);
+        }
+        MR._hideCommentPopover();
+      };
+      cancel.addEventListener('click', () => MR._hideCommentPopover());
+      save.addEventListener('click', submit);
+      field.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); MR._hideCommentPopover(); }
+      });
+
+      const row = document.createElement('div');
+      row.className = 'critic-input-row';
+      row.appendChild(field);
+      btns.appendChild(cancel);
+      btns.appendChild(save);
+      pop.appendChild(row);
+      pop.appendChild(btns);
+      MR._positionCriticPopover(pop, el.getBoundingClientRect());
+      setTimeout(() => { field.focus(); field.select(); }, 0);
     },
 
     _initCriticSelection() {
       const onSelectionChange = () => {
-        // 输入态（评论/替换）时不刷新工具条
+        // 输入态（评论/替换正在输入）时不刷新工具条
         const bar = document.getElementById('mr-critic-toolbar');
-        if (bar && bar.querySelector('input')) return;
+        if (bar && bar.classList.contains('critic-input-mode')) return;
 
         const sel = window.getSelection();
         if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
@@ -727,19 +878,35 @@
         }
         const rect = range.getBoundingClientRect();
         if (rect.width === 0 && rect.height === 0) { MR._hideCriticToolbar(); return; }
+        MR._criticRange = range.cloneRange();
         const line = MR._criticLineFor(range.startContainer);
-        MR._showCriticToolbar(rect, text, line);
+        MR._showCriticToolbar(range, text, line);
       };
 
       document.addEventListener('selectionchange', () => {
-        // 节流：等鼠标/键盘松开后再定位
         clearTimeout(MR._criticSelTimer);
         MR._criticSelTimer = setTimeout(onSelectionChange, 120);
       });
-      // 点击空白处隐藏
+
+      // 点击已有评论气泡 → 查看/编辑/删除
+      document.addEventListener('click', (e) => {
+        const bubble = e.target.closest && e.target.closest('.critic-comment');
+        if (bubble) {
+          e.preventDefault();
+          e.stopPropagation();
+          MR._showCommentPopover(bubble);
+        }
+      });
+
+      // 点击空白处隐藏评论弹窗（点工具条/弹窗内部不隐藏）
       document.addEventListener('mousedown', (e) => {
+        const pop = document.getElementById('mr-critic-popover');
         const bar = document.getElementById('mr-critic-toolbar');
-        if (bar && bar.contains(e.target)) return;
+        const inPop = pop && pop.contains(e.target);
+        const inBar = bar && bar.contains(e.target);
+        const onBubble = e.target.closest && e.target.closest('.critic-comment');
+        if (!inPop && !onBubble) MR._hideCommentPopover();
+        if (!inBar && !inPop) { /* 选区工具条由 selectionchange 控制 */ }
       });
     },
 

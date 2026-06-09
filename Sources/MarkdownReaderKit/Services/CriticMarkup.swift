@@ -80,6 +80,36 @@ public enum CriticMarkup {
         }
     }
 
+    // MARK: - 编辑 / 删除评论
+
+    /// 编辑已有评论：定位最接近 `nearLine` 的 `{>>oldComment<<}` 并替换其内容。
+    public static func editComment(in source: String, oldComment: String, newComment: String, nearLine: Int) -> String? {
+        let marker = "{>>\(oldComment)<<}"
+        guard let range = locateRange(in: source, selectedText: marker, nearLine: nearLine) else { return nil }
+        var result = source
+        result.replaceSubrange(range, with: "{>>\(newComment)<<}")
+        return result
+    }
+
+    /// 删除已有评论：定位 `{>>comment<<}` 并移除；
+    /// 若其紧邻前缀是配对的 `{==X==}` 高亮（评论创建时一并添加），则连同高亮还原为原文 `X`。
+    public static func deleteComment(in source: String, comment: String, nearLine: Int) -> String? {
+        let marker = "{>>\(comment)<<}"
+        guard let range = locateRange(in: source, selectedText: marker, nearLine: nearLine) else { return nil }
+        var result = source
+
+        let before = result[result.startIndex..<range.lowerBound]
+        if let hl = before.range(of: #"\{==[\s\S]*?==\}$"#, options: .regularExpression) {
+            // {==X==}{>>comment<<} → X
+            let highlight = String(result[hl])
+            let inner = String(highlight.dropFirst(3).dropLast(3))   // 去掉 {== 与 ==}
+            result.replaceSubrange(hl.lowerBound..<range.upperBound, with: inner)
+        } else {
+            result.replaceSubrange(range, with: "")
+        }
+        return result
+    }
+
     // MARK: - 接受 / 拒绝 / 检测
 
     /// 接受全部修改：增→保留、删→移除、替换→新文本、高亮→保留内容、评论→移除。

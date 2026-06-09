@@ -275,6 +275,26 @@ final class DocumentViewModel {
     /// 在源码中定位选中文本，包裹为对应的 CriticMarkup 语法并写回 `content`，
     /// 触发渲染视图重绘以显示标注样式。
     func applyCriticAction(_ action: CriticActionPayload) {
+        // 对已有评论的编辑/删除（action.text 为旧评论内容）
+        switch action.op {
+        case "editComment":
+            if let updated = CriticMarkup.editComment(
+                in: content, oldComment: action.text, newComment: action.payload ?? "", nearLine: action.line
+            ) {
+                content = updated
+            }
+            return
+        case "deleteComment":
+            if let updated = CriticMarkup.deleteComment(
+                in: content, comment: action.text, nearLine: action.line
+            ) {
+                content = updated
+            }
+            return
+        default:
+            break
+        }
+
         let op: CriticMarkup.Operation
         switch action.op {
         case "delete":    op = .delete

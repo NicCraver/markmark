@@ -6,7 +6,7 @@ import os.log
 
 enum PDFExportService {
 
-    private static let logger = Logger(subsystem: "com.markdownreader.app", category: "PDFExportService")
+    private static let logger = Logger(subsystem: "com.ft07.markmark", category: "PDFExportService")
 
     // MARK: - 共享 JS 等待脚本
 

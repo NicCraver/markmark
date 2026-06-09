@@ -13,7 +13,7 @@ import os
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
-    private let logger = Logger(subsystem: "com.markdownreader.app", category: "AppDelegate")
+    private let logger = Logger(subsystem: "com.ft07.markmark", category: "AppDelegate")
 
     /// 冷启动时记录待处理的文件 URL
     var pendingOpenFileURL: URL?
@@ -211,7 +211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// 透传到下层 SwiftUI 视图。
 final class FileDropOverlayView: NSView {
 
-    private let logger = Logger(subsystem: "com.markdownreader.app", category: "FileDropOverlay")
+    private let logger = Logger(subsystem: "com.ft07.markmark", category: "FileDropOverlay")
 
     /// 支持的文件扩展名
     private static let supportedExtensions: Set<String> = ["md", "markdown", "mdown", "mkd", "txt"]

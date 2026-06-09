@@ -64,7 +64,7 @@ final class UpdateViewModel {
 
     private let updateService = UpdateService()
     private let settings = SettingsModel.shared
-    private let logger = Logger(subsystem: "com.markdownreader.app", category: "UpdateViewModel")
+    private let logger = Logger(subsystem: "com.ft07.markmark", category: "UpdateViewModel")
 
     /// 下载任务
     private var downloadTask: Task<Void, Never>?

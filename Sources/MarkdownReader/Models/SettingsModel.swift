@@ -48,7 +48,7 @@ final class SettingsModel {
         static let reopenLastLocation   = "com.markdownreader.reopenLastLocation"
         static let showHiddenFiles      = "com.markdownreader.showHiddenFiles"
         static let showNonMarkdownFiles = "com.markdownreader.showNonMarkdownFiles"
-        static let appearanceMode       = "com.markdownreader.appearanceMode"
+        static let appearanceMode       = "com.ft07.markmarkearanceMode"
         static let sourceFontSize       = "com.markdownreader.sourceFontSize"
         static let contentPadding       = "com.markdownreader.contentPadding"
         static let languagePref         = "com.markdownreader.languagePref"

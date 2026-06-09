@@ -7,7 +7,7 @@ final class CommandLineService {
     private static let commandName = "mdr"
     private static let installPath = "/usr/local/bin/\(commandName)"
 
-    private let logger = Logger(subsystem: "com.markdownreader.app", category: "CommandLineService")
+    private let logger = Logger(subsystem: "com.ft07.markmark", category: "CommandLineService")
 
     var isInstalled: Bool {
         FileManager.default.fileExists(atPath: Self.installPath)
@@ -16,7 +16,7 @@ final class CommandLineService {
     func install(completion: @MainActor @escaping (Bool) -> Void = { _ in }) {
         let scriptContent = #"#!/bin/bash"#
             + "\n"
-            + #"open -b com.markdownreader.app "$@""#
+            + #"open -b com.ft07.markmark "$@""#
             + "\n"
 
         let tempDir = NSTemporaryDirectory()

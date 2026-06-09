@@ -4,7 +4,7 @@ import QuickLookUI
 import MarkdownReaderKit
 import WebKit
 
-private let logger = Logger(subsystem: "com.markdownreader.app.QuickLook", category: "PreviewProvider")
+private let logger = Logger(subsystem: "com.ft07.markmark.QuickLook", category: "PreviewProvider")
 
 @MainActor
 final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController {
@@ -40,13 +40,13 @@ final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController 
         defer { keyExists.deallocate() }
         let enabled = CFPreferencesGetAppBooleanValue(
             "com.markdownreader.enableQuickLookPreview" as CFString,
-            "com.markdownreader.app" as CFString,
+            "com.ft07.markmark" as CFString,
             keyExists
         )
         let isEnabled = keyExists.pointee.boolValue ? enabled : true
 
         guard isEnabled else {
-            handler(NSError(domain: "com.markdownreader.app.QuickLook", code: 1, userInfo: [NSLocalizedDescriptionKey: "Quick Look preview is disabled"]))
+            handler(NSError(domain: "com.ft07.markmark.QuickLook", code: 1, userInfo: [NSLocalizedDescriptionKey: "Quick Look preview is disabled"]))
             return
         }
 
@@ -111,7 +111,7 @@ final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController 
         DispatchQueue.main.async {
             guard let webView = weakSelf.webView else {
                 logger.error("webView is nil — viewDidLoad not called yet")
-                handler(NSError(domain: "com.markdownreader.app.QuickLook", code: 2, userInfo: [NSLocalizedDescriptionKey: "WebView not initialized"]))
+                handler(NSError(domain: "com.ft07.markmark.QuickLook", code: 2, userInfo: [NSLocalizedDescriptionKey: "WebView not initialized"]))
                 return
             }
 
@@ -178,7 +178,7 @@ private final class QLSchemeHandler: NSObject, WKURLSchemeHandler {
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         guard let url = urlSchemeTask.request.url,
               url.scheme == "mr" else {
-            urlSchemeTask.didFailWithError(NSError(domain: "com.markdownreader.app.QuickLook", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid scheme"]))
+            urlSchemeTask.didFailWithError(NSError(domain: "com.ft07.markmark.QuickLook", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid scheme"]))
             return
         }
 

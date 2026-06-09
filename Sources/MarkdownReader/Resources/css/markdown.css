@@ -448,3 +448,73 @@ mark.critic-mark {
 }
 #mr-critic-toolbar input:focus { border-color: var(--accent); }
 #mr-critic-toolbar .critic-primary { color: var(--accent); font-weight: 600; }
+#mr-critic-toolbar .critic-danger { color: var(--danger); }
+
+/* 正在标注的选区：持久高亮（即使原生选区消失也可见） */
+::highlight(critic-pending) {
+  background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* 评论/替换 输入态（工具条与弹窗共用） */
+#mr-critic-toolbar.critic-input-mode,
+#mr-critic-popover {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 240px;
+  max-width: 360px;
+}
+.critic-input-row { display: flex; }
+.critic-field {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+}
+textarea.critic-field { min-height: 60px; }
+.critic-field:focus { border-color: var(--accent); }
+.critic-input-btns { display: flex; justify-content: flex-end; gap: 4px; }
+
+/* 已有评论弹窗 */
+#mr-critic-popover {
+  position: fixed;
+  z-index: 99999;
+  display: none;
+  padding: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+#mr-critic-popover.visible { display: flex; }
+#mr-critic-popover button {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+#mr-critic-popover button:hover { background: var(--accent-soft); }
+.critic-popover-text {
+  color: var(--ink);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 2px 2px 4px;
+}
+/* 评论气泡可点击 */
+.critic-comment { cursor: pointer; }

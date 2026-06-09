@@ -1,16 +1,17 @@
 #!/bin/bash
-# 一键构建 + 打包 MarkdownReader.dmg (Apple Silicon / arm64 only)
+# 一键构建 + 打包 MarkMark.dmg (Apple Silicon / arm64 only)
 # 用法: ./package.sh [-d|--distribution]
 #   --distribution  启用分发模式签名（需 Developer ID 证书 + 公证）
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP_NAME="MarkdownReader"
+APP_NAME="MarkdownReader"        # 内部可执行文件名（与 Package.swift 一致）
+APP_BUNDLE_NAME="MarkMark"       # 面向用户的 .app 包名
 DISTRIBUTION=false
 ARCH="arm64"
 
 build_dmg() {
-    local DMG_NAME="MarkdownReader.dmg"
+    local DMG_NAME="MarkMark.dmg"
 
     echo ""
     echo "=========================================="
@@ -25,7 +26,7 @@ build_dmg() {
     ./build-app.sh "${BUILD_ARGS[@]}"
 
     # 2. 提取 App 图标作为 DMG 卷图标
-    VOLICON="${APP_NAME}.app/Contents/Resources/AppIcon.icns"
+    VOLICON="${APP_BUNDLE_NAME}.app/Contents/Resources/AppIcon.icns"
     if [ ! -f "$VOLICON" ]; then
         echo "⚠️  未找到 AppIcon.icns，DMG 将使用默认图标"
         VOLICON=""
@@ -43,19 +44,19 @@ build_dmg() {
             --window-pos 200 120
             --window-size 600 400
             --icon-size 100
-            --icon "${APP_NAME}.app" 175 190
+            --icon "${APP_BUNDLE_NAME}.app" 175 190
             --app-drop-link 425 190
         )
         if [ -n "$VOLICON" ]; then
             CREATE_DMG_ARGS+=(--volicon "${VOLICON}")
         fi
-        create-dmg "${CREATE_DMG_ARGS[@]}" "$DMG_NAME" "${APP_NAME}.app"
+        create-dmg "${CREATE_DMG_ARGS[@]}" "$DMG_NAME" "${APP_BUNDLE_NAME}.app"
     else
         echo "📦 create-dmg 未安装，使用 hdiutil 打包（DMG 将无自定义图标和布局）..."
         echo "   💡 提示：运行 brew install create-dmg 可获得更好的 DMG 打包效果"
         STAGING=$(mktemp -d)
         trap "rm -rf '$STAGING'" EXIT
-        cp -R "${APP_NAME}.app" "$STAGING/"
+        cp -R "${APP_BUNDLE_NAME}.app" "$STAGING/"
         ln -s /Applications "$STAGING/Applications"
         hdiutil create -volname "MarkMark" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
         rm -rf "$STAGING"
@@ -79,8 +80,8 @@ build_dmg() {
 
     # 6. 验证
     echo "🔍 验证构建结果..."
-    file "${APP_NAME}.app/Contents/MacOS/${APP_NAME}"
-    codesign --verify --deep --strict "${APP_NAME}.app" 2>&1 || true
+    file "${APP_BUNDLE_NAME}.app/Contents/MacOS/${APP_NAME}"
+    codesign --verify --deep --strict "${APP_BUNDLE_NAME}.app" 2>&1 || true
 
     echo ""
     echo "✅ ${DMG_NAME} 已生成"
@@ -102,4 +103,4 @@ build_dmg
 
 echo ""
 echo "🎉 所有 DMG 打包完成！"
-ls -lh MarkdownReader.dmg 2>/dev/null
+ls -lh MarkMark.dmg 2>/dev/null

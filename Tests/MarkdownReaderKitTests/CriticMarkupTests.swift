@@ -92,6 +92,46 @@ struct CriticMarkupApplyTests {
     }
 }
 
+// MARK: - edit / delete comment
+
+@Suite("CriticMarkup comment editing")
+struct CriticMarkupCommentTests {
+
+    @Test("editComment rewrites the comment text in place")
+    func edit() {
+        let src = "看这里{==重点==}{>>原评论<<}结束"
+        let out = CriticMarkup.editComment(in: src, oldComment: "原评论", newComment: "新评论", nearLine: 1)
+        #expect(out == "看这里{==重点==}{>>新评论<<}结束")
+    }
+
+    @Test("editComment returns nil when the comment is absent")
+    func editMissing() {
+        #expect(CriticMarkup.editComment(in: "no comment here", oldComment: "x", newComment: "y", nearLine: 1) == nil)
+    }
+
+    @Test("deleteComment of a comment-only mark removes just the comment")
+    func deleteCommentOnly() {
+        let src = "结论存疑{>>来源？<<}。"
+        let out = CriticMarkup.deleteComment(in: src, comment: "来源？", nearLine: 1)
+        #expect(out == "结论存疑。")
+    }
+
+    @Test("deleteComment unwraps the paired highlight too")
+    func deleteUnwrapsHighlight() {
+        // 评论是用 {==sel==}{>>c<<} 创建的，删除评论应连同高亮一起还原为原文
+        let src = "请改{==这一段==}{>>太啰嗦<<}内容"
+        let out = CriticMarkup.deleteComment(in: src, comment: "太啰嗦", nearLine: 1)
+        #expect(out == "请改这一段内容")
+    }
+
+    @Test("deleteComment targets the occurrence nearest the hint line")
+    func deleteNearest() {
+        let src = "a{>>dup<<}\n\n\nb{>>dup<<}"
+        let out = CriticMarkup.deleteComment(in: src, comment: "dup", nearLine: 4)
+        #expect(out == "a{>>dup<<}\n\n\nb")
+    }
+}
+
 // MARK: - accept / reject / strip
 
 @Suite("CriticMarkup transforms")

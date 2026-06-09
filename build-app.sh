@@ -7,7 +7,10 @@
 
 set -euo pipefail
 
+# 内部 SPM target / 可执行文件 / 资源 bundle 名（不可改，与 Package.swift 一致）
 APP_NAME="MarkdownReader"
+# 面向用户的 .app 包名（显示名 MarkMark；可执行文件仍为 ${APP_NAME}）
+APP_BUNDLE_NAME="MarkMark"
 
 # 动态读取版本号（优先级：git tag > CHANGELOG.md > 兜底）
 if VERSION=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null | sed 's/^v//'); then
@@ -64,7 +67,7 @@ if [[ "$PATCHED" -gt 0 ]]; then
     swift build -c "$CONFIG" --arch arm64
 fi
 
-APP_BUNDLE="${PROJECT_DIR}/${APP_NAME}.app"
+APP_BUNDLE="${PROJECT_DIR}/${APP_BUNDLE_NAME}.app"
 
 # 清理旧的
 rm -rf "$APP_BUNDLE"
@@ -304,7 +307,7 @@ fi
 
 # 签名
 if [[ -n "$SIGN_IDENTITY" ]]; then
-    echo "🔏 签名 ${APP_NAME}.app..."
+    echo "🔏 签名 ${APP_BUNDLE_NAME}.app..."
 
     if $DISTRIBUTION; then
         # 分发签名：使用 Developer ID 证书 + hardened runtime + timestamp
@@ -327,7 +330,7 @@ if [[ -n "$SIGN_IDENTITY" ]]; then
     codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE" 2>&1
 
     echo ""
-    echo "✅ ${APP_NAME}.app 已签名: ${APP_BUNDLE}"
+    echo "✅ ${APP_BUNDLE_NAME}.app 已签名: ${APP_BUNDLE}"
     if $DISTRIBUTION; then
         echo "   签名身份: ${SIGN_IDENTITY}"
     else
@@ -337,11 +340,11 @@ if [[ -n "$SIGN_IDENTITY" ]]; then
         echo ""
         echo "   📋 分享给他人时，对方需要："
         echo "      右键点击 app → 打开 → 确认打开"
-        echo "      或终端执行: xattr -cr /path/to/${APP_NAME}.app"
+        echo "      或终端执行: xattr -cr /path/to/${APP_BUNDLE_NAME}.app"
     fi
 else
     echo ""
-    echo "✅ ${APP_NAME}.app 已生成: ${APP_BUNDLE}"
+    echo "✅ ${APP_BUNDLE_NAME}.app 已生成: ${APP_BUNDLE}"
     echo "   ⚠️  未签名 — 分发时接收方需右键打开绕过 Gatekeeper"
 fi
 

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.markdownreader.app.QuickLook</string>
+	<string>com.ft07.markmark.QuickLook</string>
 	<key>CFBundleName</key>
 	<string>MarkMark Quick Look</string>
 	<key>CFBundleDisplayName</key>

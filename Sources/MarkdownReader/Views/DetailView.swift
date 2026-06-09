@@ -60,8 +60,8 @@ struct DetailView: View {
     /// 导出 / CriticMarkup 复用的 WKWebView 句柄
     @State private var webViewHandle = WebViewHandle()
 
-    /// 复制给 AI 后的短暂反馈（图标切换为对勾）
-    @State private var didCopyForAI = false
+    /// 复制后的短暂反馈（图标切换为对勾）
+    @State private var didCopy = false
 
     /// 清除标注确认弹窗
     @State private var showClearAnnotationsAlert = false
@@ -219,19 +219,9 @@ struct DetailView: View {
 
             Spacer()
 
-            // 渲染 / 编辑模式切换（纯文本模式下隐藏，因为只有编辑模式可用）
-            if documentViewModel.hasDocument && !documentViewModel.isPlainTextMode {
-                Picker("", selection: Binding(
-                    get: { documentViewModel.displayMode },
-                    set: { documentViewModel.switchDisplayMode($0) }
-                )) {
-                    Text(L10n.tr(.displayModeRendered, language: language)).tag(DisplayMode.rendered)
-                    Text(L10n.tr(.displayModeRaw, language: language)).tag(DisplayMode.raw)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 140)
-                .padding(.trailing, 8)
-            }
+            // 渲染 / 编辑模式切换已移除：MarkMark 是纯阅读 + 标注，无编辑需求。
+            // 纯文本（.txt）文件无法渲染，仍以原文视图展示（见 documentContentView）。
+
             // 操作按钮组与大纲图标下对齐，横向间隔一致
             HStack(alignment: .bottom, spacing: 8) {
                 // 刷新按钮（文件被外部修改时显示，在保存按钮左侧）
@@ -283,16 +273,29 @@ struct DetailView: View {
                         .help(L10n.tr(.titleBarClearAnnotations, language: language))
                     }
 
-                    // 一键复制带标注文档给 AI
-                    Button {
-                        copyForAI()
+                    // 复制：默认复制 CriticMarkup 原文；下拉可「复制给 AI（含说明）」
+                    Menu {
+                        Button {
+                            copyCritic()
+                        } label: {
+                            Label(L10n.tr(.copyCriticMenu, language: language), systemImage: "doc.on.doc")
+                        }
+                        Button {
+                            copyForAI()
+                        } label: {
+                            Label(L10n.tr(.copyForAIMenu, language: language), systemImage: "sparkles")
+                        }
                     } label: {
-                        Image(systemName: didCopyForAI ? "checkmark.circle.fill" : "sparkles")
+                        Image(systemName: didCopy ? "checkmark.circle.fill" : "doc.on.doc")
                             .font(.system(size: 14))
-                            .foregroundStyle(didCopyForAI ? themeColors.accent : themeColors.fgMuted)
+                            .foregroundStyle(didCopy ? themeColors.accent : themeColors.fgMuted)
+                    } primaryAction: {
+                        copyCritic()
                     }
-                    .buttonStyle(.plain)
-                    .help(L10n.tr(.titleBarCopyForAI, language: language))
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help(L10n.tr(.titleBarCopyMenu, language: language))
                 }
 
                 // 大纲切换按钮（始终显示在 titlebar 最右侧）
@@ -408,6 +411,7 @@ struct DetailView: View {
             "replace": L10n.tr(.criticReplace, language: language),
             "confirm": L10n.tr(.criticConfirm, language: language),
             "cancel": L10n.tr(.criticCancel, language: language),
+            "edit": L10n.tr(.criticEdit, language: language),
             "commentHint": L10n.tr(.criticCommentHint, language: language),
             "replaceHint": L10n.tr(.criticReplaceHint, language: language),
         ]
@@ -416,14 +420,22 @@ struct DetailView: View {
     /// 复制带标注的文档（含引导提示词）到剪贴板，供粘贴给 AI
     private func copyForAI() {
         guard documentViewModel.hasDocument else { return }
-        let payload = CriticMarkup.exportForAI(documentViewModel.content)
+        writeToPasteboard(CriticMarkup.exportForAI(documentViewModel.content))
+    }
+
+    /// 复制带 CriticMarkup 标注的原文（不含 AI 引导说明）
+    private func copyCritic() {
+        guard documentViewModel.hasDocument else { return }
+        writeToPasteboard(documentViewModel.content)
+    }
+
+    private func writeToPasteboard(_ text: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(payload, forType: .string)
-
-        didCopyForAI = true
+        pasteboard.setString(text, forType: .string)
+        didCopy = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            didCopyForAI = false
+            didCopy = false
         }
     }
 
@@ -624,35 +636,33 @@ struct DetailView: View {
     @ViewBuilder
     private var documentContentView: some View {
         ZStack {
-            // Raw 模式视图 — 始终保持存活，避免 NSTextView 被销毁导致 undo 历史丢失
-            RawMarkdownView(
-                content: Binding(
-                    get: { documentViewModel.content },
-                    set: { documentViewModel.content = $0 }
-                ),
-                fontSize: settings.sourceFontPointSize,
-                contentPadding: settings.contentPaddingPoints,
-                scrollToLine: documentViewModel.scrollToLineRequest,
-                fileURL: documentViewModel.currentFileURL,
-                isActive: documentViewModel.displayMode == .raw,
-                isFindBarVisible: appViewModel.isFindBarVisible,
-                searchRef: textViewSearchRef,
-                onCursorLineNumberChanged: { lineNumber in
-                    documentViewModel.cursorLineNumber = lineNumber
-                }
-            )
-            .opacity(documentViewModel.displayMode == .raw ? 1 : 0)
-            .allowsHitTesting(documentViewModel.displayMode == .raw)
-            .onChange(of: documentViewModel.scrollToLineRequest) { _, newValue in
-                if newValue != nil {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        documentViewModel.clearScrollRequest()
+            // 纯文本（.txt）文件无法渲染，用原文视图展示（只读阅读，无编辑切换）
+            if documentViewModel.isPlainTextMode {
+                RawMarkdownView(
+                    content: Binding(
+                        get: { documentViewModel.content },
+                        set: { documentViewModel.content = $0 }
+                    ),
+                    fontSize: settings.sourceFontPointSize,
+                    contentPadding: settings.contentPaddingPoints,
+                    scrollToLine: documentViewModel.scrollToLineRequest,
+                    fileURL: documentViewModel.currentFileURL,
+                    isActive: true,
+                    isFindBarVisible: appViewModel.isFindBarVisible,
+                    searchRef: textViewSearchRef,
+                    onCursorLineNumberChanged: { lineNumber in
+                        documentViewModel.cursorLineNumber = lineNumber
+                    }
+                )
+                .onChange(of: documentViewModel.scrollToLineRequest) { _, newValue in
+                    if newValue != nil {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            documentViewModel.clearScrollRequest()
+                        }
                     }
                 }
-            }
-
-            // 渲染模式视图 — 仅在渲染模式下显示
-            if documentViewModel.displayMode == .rendered {
+            } else {
+                // Markdown：仅渲染视图（无编辑界面）
                 WebViewMarkdownView(
                     content: documentViewModel.content,
                     fileURL: documentViewModel.currentFileURL,

@@ -31,7 +31,7 @@ final class UpdateService: Sendable {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
 
-    private let logger = Logger(subsystem: "com.markdownreader.app", category: "UpdateService")
+    private let logger = Logger(subsystem: "com.ft07.markmark", category: "UpdateService")
 
     // MARK: - 自动安装可行性判断
 

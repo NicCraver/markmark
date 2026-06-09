@@ -151,8 +151,11 @@ public enum L10n {
 
         // CriticMarkup 审阅标注
         case titleBarCopyForAI
+        case titleBarCopyMenu
         case titleBarClearAnnotations
         case copyForAIMenu
+        case copyCriticMenu
+        case copiedToast
         case clearAnnotationsMenu
         case clearAnnotationsConfirmTitle
         case clearAnnotationsConfirmMessage
@@ -162,6 +165,7 @@ public enum L10n {
         case criticReplace
         case criticConfirm
         case criticCancel
+        case criticEdit
         case criticCommentHint
         case criticReplaceHint
 
@@ -334,8 +338,11 @@ public enum L10n {
         .titleBarToggleOutline: "Toggle Outline",
         .titleBarCopyPath: "Copy Path",
         .titleBarCopyForAI: "Copy annotated doc for AI",
+        .titleBarCopyMenu: "Copy (click: CriticMarkup; menu: for AI)",
         .titleBarClearAnnotations: "Clear all annotations",
-        .copyForAIMenu: "Copy for AI",
+        .copyForAIMenu: "Copy for AI (with instructions)",
+        .copyCriticMenu: "Copy CriticMarkup",
+        .copiedToast: "Copied",
         .clearAnnotationsMenu: "Clear Annotations",
         .clearAnnotationsConfirmTitle: "Clear all annotations?",
         .clearAnnotationsConfirmMessage: "This removes every CriticMarkup mark and restores the original text. This cannot be undone.",
@@ -345,6 +352,7 @@ public enum L10n {
         .criticReplace: "Replace",
         .criticConfirm: "Apply",
         .criticCancel: "Cancel",
+        .criticEdit: "Edit",
         .criticCommentHint: "Add a comment…",
         .criticReplaceHint: "Replace with…",
         .fileModifiedExternallyTitle: "File Modified Externally",
@@ -501,8 +509,11 @@ public enum L10n {
         .titleBarToggleOutline: "切换大纲",
         .titleBarCopyPath: "复制路径",
         .titleBarCopyForAI: "复制标注文档给 AI",
+        .titleBarCopyMenu: "复制（点击复制 CriticMarkup，下拉可复制给 AI）",
         .titleBarClearAnnotations: "清除全部标注",
-        .copyForAIMenu: "复制给 AI",
+        .copyForAIMenu: "复制给 AI（含说明）",
+        .copyCriticMenu: "复制 CriticMarkup",
+        .copiedToast: "已复制",
         .clearAnnotationsMenu: "清除标注",
         .clearAnnotationsConfirmTitle: "清除全部标注？",
         .clearAnnotationsConfirmMessage: "将移除所有 CriticMarkup 标注并恢复原文，此操作无法撤销。",
@@ -512,6 +523,7 @@ public enum L10n {
         .criticReplace: "替换",
         .criticConfirm: "应用",
         .criticCancel: "取消",
+        .criticEdit: "编辑",
         .criticCommentHint: "输入评论…",
         .criticReplaceHint: "替换为…",
         .fileModifiedExternallyTitle: "文件已被外部修改",
@@ -668,8 +680,11 @@ public enum L10n {
         .titleBarToggleOutline: "切換大綱",
         .titleBarCopyPath: "複製路徑",
         .titleBarCopyForAI: "複製標註文件給 AI",
+        .titleBarCopyMenu: "複製（點擊複製 CriticMarkup，下拉可複製給 AI）",
         .titleBarClearAnnotations: "清除全部標註",
-        .copyForAIMenu: "複製給 AI",
+        .copyForAIMenu: "複製給 AI（含說明）",
+        .copyCriticMenu: "複製 CriticMarkup",
+        .copiedToast: "已複製",
         .clearAnnotationsMenu: "清除標註",
         .clearAnnotationsConfirmTitle: "清除全部標註？",
         .clearAnnotationsConfirmMessage: "將移除所有 CriticMarkup 標註並恢復原文，此操作無法復原。",
@@ -679,6 +694,7 @@ public enum L10n {
         .criticReplace: "替換",
         .criticConfirm: "套用",
         .criticCancel: "取消",
+        .criticEdit: "編輯",
         .criticCommentHint: "輸入評論…",
         .criticReplaceHint: "替換為…",
         .fileModifiedExternallyTitle: "檔案已被外部修改",
