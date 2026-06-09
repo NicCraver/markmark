@@ -6,7 +6,9 @@
 
 MarkMark 是一个原生 macOS Markdown 阅读器应用（fork 自 [davidhoo/MarkdownReader](https://github.com/davidhoo/MarkdownReader)）。在安静阅读的基础上加入 CriticMarkup 审阅标注与「一键复制给 AI」工作流。三栏布局：左侧目录树 + 中间渲染视图 + 右侧大纲导航。
 
-> 注意：SPM target / 目录 / 可执行文件 / Bundle ID 仍沿用内部名 `MarkdownReader`（`com.markdownreader.app`），仅面向用户的显示名（CFBundleName/L10n appName）改为 MarkMark，以免破坏构建脚本与 Quick Look 扩展。
+> 命名约定：主可执行 target / 产物 / 源码目录 / Bundle ID 均已改为 MarkMark（`Sources/MarkMark`，可执行文件 `MarkMark`，资源 bundle `MarkMark_MarkMark.bundle`，Bundle ID `com.ft07.markmark`）。
+> 仍保留 `MarkdownReader` 字样的是：共享库 target `MarkdownReaderKit`、Quick Look 扩展 target/二进制 `MarkdownReaderQL`、以及个别内部 Swift 文件/类型名（如 `MarkdownReaderApp.swift`）——它们是内部模块名，不面向用户，改名会牵动大量 import，故保留。
+> UserDefaults 键与 `Notification.Name` 仍用 `com.markdownreader.*` 前缀（仅作唯一键，改动会清空用户设置）。
 
 - **当前版本**: 2.0.5
 - **最低部署**: macOS 15.0（自 fork 起从 macOS 26 下调；渲染层由 SwiftUI WebView/WebPage 迁移回 WKWebView）
@@ -28,7 +30,7 @@ MarkMark 是一个原生 macOS Markdown 阅读器应用（fork 自 [davidhoo/Mar
 ## 项目结构
 
 ```
-Sources/MarkdownReader/
+Sources/MarkMark/
 ├── App/
 │   ├── MarkdownReaderApp.swift    # @main 入口，WindowGroup，菜单命令，Notification.Name 常量
 │   └── AppDelegate.swift          # NSApplicationDelegate，冷/热启动文件处理

@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "MarkdownReader",
+    name: "MarkMark",
     platforms: [
         .macOS(.v15)
     ],
     products: [
         .executable(
-            name: "MarkdownReader",
-            targets: ["MarkdownReader"]
+            name: "MarkMark",
+            targets: ["MarkMark"]
         )
     ],
     dependencies: [
@@ -27,14 +27,14 @@ let package = Package(
             ],
             path: "Sources/MarkdownReaderKit"
         ),
-        // Main application
+        // Main application（可执行文件名 = MarkMark；源码目录 Sources/MarkMark）
         .executableTarget(
-            name: "MarkdownReader",
+            name: "MarkMark",
             dependencies: [
                 "MarkdownReaderKit",
                 .product(name: "Markdown", package: "swift-markdown")
             ],
-            path: "Sources/MarkdownReader",
+            path: "Sources/MarkMark",
             resources: [
                 .process("Assets.xcassets"),
                 .copy("Resources")

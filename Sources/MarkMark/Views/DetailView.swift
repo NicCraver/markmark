@@ -273,29 +273,40 @@ struct DetailView: View {
                         .help(L10n.tr(.titleBarClearAnnotations, language: language))
                     }
 
-                    // 复制：默认复制 CriticMarkup 原文；下拉可「复制给 AI（含说明）」
-                    Menu {
+                    // 复制：左侧按钮直接复制 CriticMarkup 原文；右侧下拉箭头选择「复制给 AI（含说明）」
+                    HStack(spacing: 2) {
                         Button {
                             copyCritic()
                         } label: {
-                            Label(L10n.tr(.copyCriticMenu, language: language), systemImage: "doc.on.doc")
+                            Image(systemName: didCopy ? "checkmark.circle.fill" : "doc.on.doc")
+                                .font(.system(size: 14))
+                                .foregroundStyle(didCopy ? themeColors.accent : themeColors.fgMuted)
                         }
-                        Button {
-                            copyForAI()
+                        .buttonStyle(.plain)
+                        .help(L10n.tr(.copyCriticMenu, language: language))
+
+                        Menu {
+                            Button {
+                                copyCritic()
+                            } label: {
+                                Label(L10n.tr(.copyCriticMenu, language: language), systemImage: "doc.on.doc")
+                            }
+                            Button {
+                                copyForAI()
+                            } label: {
+                                Label(L10n.tr(.copyForAIMenu, language: language), systemImage: "sparkles")
+                            }
                         } label: {
-                            Label(L10n.tr(.copyForAIMenu, language: language), systemImage: "sparkles")
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(themeColors.fgMuted)
                         }
-                    } label: {
-                        Image(systemName: didCopy ? "checkmark.circle.fill" : "doc.on.doc")
-                            .font(.system(size: 14))
-                            .foregroundStyle(didCopy ? themeColors.accent : themeColors.fgMuted)
-                    } primaryAction: {
-                        copyCritic()
+                        .menuStyle(.borderlessButton)
+                        .menuIndicator(.hidden)
+                        .fixedSize()
+                        .frame(width: 12)
+                        .help(L10n.tr(.titleBarCopyMenu, language: language))
                     }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .help(L10n.tr(.titleBarCopyMenu, language: language))
                 }
 
                 // 大纲切换按钮（始终显示在 titlebar 最右侧）

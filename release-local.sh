@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP_NAME="MarkdownReader"
+APP_NAME="MarkMark"
 
 # 确定版本号
 if [[ $# -gt 0 ]]; then
@@ -44,7 +44,7 @@ rm -f "$DMG_NAME"
 VOLICON="${APP_NAME}.app/Contents/Resources/AppIcon.icns"
 if command -v create-dmg &>/dev/null; then
     CREATE_DMG_ARGS=(
-        --volname "Markdown Reader"
+        --volname "MarkMark"
         --window-pos 200 120
         --window-size 600 400
         --icon-size 100
@@ -60,7 +60,7 @@ else
     trap "rm -rf '$STAGING'" EXIT
     cp -R "${APP_NAME}.app" "$STAGING/"
     ln -s /Applications "$STAGING/Applications"
-    hdiutil create -volname "Markdown Reader" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
+    hdiutil create -volname "MarkMark" -srcfolder "$STAGING" -ov -format UDZO "$DMG_NAME"
     rm -rf "$STAGING"
     trap - EXIT
 fi
@@ -101,7 +101,7 @@ cat > /tmp/release-body.md << 'BODY'
 3. 首次打开时，macOS 可能提示「无法验证开发者」：
    - 打开 **系统设置 > 隐私与安全性**
    - 找到被阻止的 app，点击 **仍要打开**
-   - 或在终端运行：`xattr -cr /Applications/MarkdownReader.app`
+   - 或在终端运行：`xattr -cr /Applications/MarkMark.app`
 4. 也可以直接右键点击 app → 选择 **打开**
 
 ---

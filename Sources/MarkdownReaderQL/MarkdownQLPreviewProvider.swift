@@ -138,8 +138,8 @@ final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController 
 
     private nonisolated static func resolveResourceSearchPaths() -> [URL] {
         let searchPaths: [URL] = [
-            Bundle.main.resourceURL?.appendingPathComponent("MarkdownReader_MarkdownReader.bundle").appendingPathComponent("Resources"),
-            Bundle.main.resourceURL?.appendingPathComponent("MarkdownReader_MarkdownReader.bundle").appendingPathComponent("Contents").appendingPathComponent("Resources"),
+            Bundle.main.resourceURL?.appendingPathComponent("MarkMark_MarkMark.bundle").appendingPathComponent("Resources"),
+            Bundle.main.resourceURL?.appendingPathComponent("MarkMark_MarkMark.bundle").appendingPathComponent("Contents").appendingPathComponent("Resources"),
             Bundle.main.resourceURL,
             Bundle.main.bundleURL
                 .deletingLastPathComponent()
@@ -149,7 +149,7 @@ final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController 
                 .deletingLastPathComponent()
                 .deletingLastPathComponent()
                 .appendingPathComponent("Resources")
-                .appendingPathComponent("MarkdownReader_MarkdownReader.bundle")
+                .appendingPathComponent("MarkMark_MarkMark.bundle")
                 .appendingPathComponent("Resources"),
         ].compactMap { $0 }
 

@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP_NAME="MarkdownReader"        # 内部可执行文件名（与 Package.swift 一致）
+APP_NAME="MarkMark"        # 内部可执行文件名（与 Package.swift 一致）
 APP_BUNDLE_NAME="MarkMark"       # 面向用户的 .app 包名
 DISTRIBUTION=false
 ARCH="arm64"

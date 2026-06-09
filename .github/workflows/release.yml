@@ -17,8 +17,8 @@ on:
         default: false
 
 env:
-  SCHEME: MarkdownReader
-  PRODUCT_NAME: MarkdownReader
+  SCHEME: MarkMark
+  PRODUCT_NAME: MarkMark
   BUNDLE_ID: com.ft07.markmark
 
 permissions:
@@ -73,11 +73,11 @@ jobs:
           ## 安装说明
 
           1. 下载 `.dmg` 文件，双击打开
-          2. 将 **Markdown Reader** 拖入 **Applications** 文件夹
+          2. 将 **MarkMark** 拖入 **Applications** 文件夹
           3. 首次打开时，macOS 可能提示「无法验证开发者」：
              - 打开 **系统设置 > 隐私与安全性**
              - 找到被阻止的 app，点击 **仍要打开**
-             - 或在终端运行：`xattr -cr /Applications/MarkdownReader.app`
+             - 或在终端运行：`xattr -cr /Applications/MarkMark.app`
           4. 也可以直接右键点击 app → 选择 **打开**
 
           ---
@@ -177,7 +177,7 @@ jobs:
           cp "$BUILD_DIR/${{ env.PRODUCT_NAME }}" "$MACOS_DIR/"
           sed "s/__VERSION__/$VERSION/g" scripts/Info.plist > "$APP_DIR/Contents/Info.plist"
 
-          RESOURCE_BUNDLE="$BUILD_DIR/${{ env.PRODUCT_NAME }}_MarkdownReader.bundle"
+          RESOURCE_BUNDLE="$BUILD_DIR/${{ env.PRODUCT_NAME }}_MarkMark.bundle"
           if [ -d "$RESOURCE_BUNDLE" ]; then
             cp -R "$RESOURCE_BUNDLE/" "$RESOURCES_DIR/"
             echo "✅ Copied SPM resource bundle"
@@ -185,7 +185,7 @@ jobs:
 
           for bundle in "$BUILD_DIR"/*.bundle; do
             bundle_name=$(basename "$bundle")
-            if [[ "$bundle_name" != "${{ env.PRODUCT_NAME }}_MarkdownReader.bundle" ]]; then
+            if [[ "$bundle_name" != "${{ env.PRODUCT_NAME }}_MarkMark.bundle" ]]; then
               cp -R "$bundle" "$RESOURCES_DIR/"
               echo "📦 Copied dependency bundle: $bundle_name"
             fi
@@ -256,11 +256,11 @@ jobs:
           ## 安装说明
 
           1. 下载 `.dmg` 文件，双击打开
-          2. 将 **Markdown Reader** 拖入 **Applications** 文件夹
+          2. 将 **MarkMark** 拖入 **Applications** 文件夹
           3. 首次打开时，macOS 可能提示「无法验证开发者」：
              - 打开 **系统设置 > 隐私与安全性**
              - 找到被阻止的 app，点击 **仍要打开**
-             - 或在终端运行：`xattr -cr /Applications/MarkdownReader.app`
+             - 或在终端运行：`xattr -cr /Applications/MarkMark.app`
           4. 也可以直接右键点击 app → 选择 **打开**
 
           ---

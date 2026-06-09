@@ -80,7 +80,7 @@ public final class MarkdownURLSchemeHandler: NSObject, WKURLSchemeHandler {
             searchPaths = customPaths.map { $0.appendingPathComponent(path) }
         } else {
             searchPaths = [
-                Bundle.main.resourceURL?.appendingPathComponent("MarkdownReader_MarkdownReader.bundle").appendingPathComponent("Resources").appendingPathComponent(path),
+                Bundle.main.resourceURL?.appendingPathComponent("MarkMark_MarkMark.bundle").appendingPathComponent("Resources").appendingPathComponent(path),
                 Bundle.main.resourceURL?.appendingPathComponent("Resources").appendingPathComponent(path),
                 Bundle.main.resourceURL?.appendingPathComponent(path),
             ].compactMap { $0 }

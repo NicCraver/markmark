@@ -1,5 +1,5 @@
 #!/bin/bash
-# 构建 MarkdownReader.app (Apple Silicon / arm64 only)
+# 构建 MarkMark.app (Apple Silicon / arm64 only)
 # 用法: ./build-app.sh [-r|--release] [-s|--sign [IDENTITY]] [-d|--distribution]
 #   --sign       签名 .app（非分发模式自动使用 ad-hoc 签名，可分享给他人）
 #   --sign ID    分发模式下使用指定签名身份（如 "Developer ID Application: xxx"）
@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # 内部 SPM target / 可执行文件 / 资源 bundle 名（不可改，与 Package.swift 一致）
-APP_NAME="MarkdownReader"
+APP_NAME="MarkMark"
 # 面向用户的 .app 包名（显示名 MarkMark；可执行文件仍为 ${APP_NAME}）
 APP_BUNDLE_NAME="MarkMark"
 
@@ -85,11 +85,11 @@ echo "🔪 Strip 主二进制..."
 strip -x "$APP_BUNDLE/Contents/MacOS/${APP_NAME}"
 
 # 复制资源 bundle（Swift Package Manager 编译的资源）
-if [ -d "${BUILD_DIR}/${APP_NAME}_MarkdownReader.bundle" ]; then
-    cp -R "${BUILD_DIR}/${APP_NAME}_MarkdownReader.bundle" "$APP_BUNDLE/Contents/Resources/"
+if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
+    cp -R "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" "$APP_BUNDLE/Contents/Resources/"
 
     # 移除 SPM bundle 中的 AppIcon（已通过 actool 编译到 Assets.car 中提供，无需重复）
-    SPM_BUNDLE="${APP_BUNDLE}/Contents/Resources/${APP_NAME}_MarkdownReader.bundle"
+    SPM_BUNDLE="${APP_BUNDLE}/Contents/Resources/${APP_NAME}_MarkMark.bundle"
     if [ -d "${SPM_BUNDLE}/Assets.xcassets/AppIcon.appiconset" ]; then
         rm -rf "${SPM_BUNDLE}/Assets.xcassets/AppIcon.appiconset"
         # 如果 Assets.xcassets 目录已空（只剩 Contents.json），也一并移除
@@ -104,7 +104,7 @@ fi
 # 复制依赖包的资源 bundle（Textual 的 prism-bundle.js 等）
 for bundle in "${BUILD_DIR}"/*.bundle; do
     bundle_name=$(basename "$bundle")
-    if [[ "$bundle_name" != "${APP_NAME}_MarkdownReader.bundle" ]]; then
+    if [[ "$bundle_name" != "${APP_NAME}_MarkMark.bundle" ]]; then
         cp -R "$bundle" "$APP_BUNDLE/Contents/Resources/"
         echo "📦 复制依赖资源: $bundle_name"
     fi
@@ -250,11 +250,11 @@ else
 fi
 
 # 复制主应用的资源 bundle 到 Extension（Extension 运行在独立进程中，无法直接访问主 app 的资源）
-if [ -d "${BUILD_DIR}/${APP_NAME}_MarkdownReader.bundle" ]; then
-    cp -R "${BUILD_DIR}/${APP_NAME}_MarkdownReader.bundle" "${QL_APPEX}/Contents/Resources/"
+if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
+    cp -R "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" "${QL_APPEX}/Contents/Resources/"
 
     # QL Extension 不需要 AppIcon（Extension 不显示自己的图标）
-    QL_BUNDLE="${QL_APPEX}/Contents/Resources/${APP_NAME}_MarkdownReader.bundle"
+    QL_BUNDLE="${QL_APPEX}/Contents/Resources/${APP_NAME}_MarkMark.bundle"
     if [ -d "${QL_BUNDLE}/Assets.xcassets/AppIcon.appiconset" ]; then
         rm -rf "${QL_BUNDLE}/Assets.xcassets/AppIcon.appiconset"
         remaining=$(find "${QL_BUNDLE}/Assets.xcassets" -mindepth 1 -not -name "Contents.json" 2>/dev/null | wc -l | tr -d ' ')
@@ -274,7 +274,7 @@ fi
 # 复制依赖包的资源 bundle 到 Extension
 for bundle in "${BUILD_DIR}"/*.bundle; do
     bundle_name=$(basename "$bundle")
-    if [[ "$bundle_name" != "${APP_NAME}_MarkdownReader.bundle" ]]; then
+    if [[ "$bundle_name" != "${APP_NAME}_MarkMark.bundle" ]]; then
         cp -R "$bundle" "${QL_APPEX}/Contents/Resources/"
     fi
 done
