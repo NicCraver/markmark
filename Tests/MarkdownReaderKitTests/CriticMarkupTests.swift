@@ -311,4 +311,50 @@ struct CriticMarkupQuoteLocateTests {
         let out = CriticMarkup.apply(.highlight, to: source, selectedText: selected, nearLine: 1)
         #expect(out == "不是为死的那个人停的。{==是为\"第五起\"这三个字==}。")
     }
+
+    @Test("single-span bold still located exactly (content is a substring)")
+    func singleSpanExact() {
+        // **粗体** 的内容「粗体」本身是源码子串，精确匹配即可命中
+        let out = CriticMarkup.apply(.highlight, to: "前**粗体**后", selectedText: "粗体", nearLine: 1)
+        #expect(out == "前**{==粗体==}**后")
+    }
+}
+
+// MARK: - 容错定位（选区跨行内标记 / 软换行）
+
+@Suite("CriticMarkup tolerant locate")
+struct CriticMarkupTolerantLocateTests {
+
+    @Test("locates a selection that crosses an inline-emphasis boundary")
+    func crossesEmphasis() {
+        // 渲染视图里看到 "bc"，但源码是 a**b**c —— "bc" 不是子串，需容错
+        let out = CriticMarkup.apply(.delete, to: "a**b**c", selectedText: "bc", nearLine: 1)
+        #expect(out == "a**{--b**c--}")
+    }
+
+    @Test("locates across a soft line break (newline in source)")
+    func crossesSoftBreak() {
+        // 选区视觉文本 "第一行第二行"（软换行处的空白被忽略），源码中间是 \n
+        let out = CriticMarkup.apply(.highlight, to: "第一行\n第二行结尾", selectedText: "第一行第二行", nearLine: 1)
+        #expect(out == "{==第一行\n第二行==}结尾")
+    }
+
+    @Test("tolerant match picks the occurrence nearest the hint line")
+    func tolerantNearestLine() {
+        let source = "x**a**y\n\n\nx**a**y"
+        // 选 "xay"（跨 ** 边界），近第 4 行应选第二处
+        let out = CriticMarkup.apply(.highlight, to: source, selectedText: "xay", nearLine: 4)
+        #expect(out == "x**a**y\n\n\n{==x**a**y==}")
+    }
+
+    @Test("does not fuzzy-match selections that are too short")
+    func tooShortNoFuzzy() {
+        // 单字符选区不做容错，避免乱命中
+        #expect(CriticMarkup.locateRange(in: "a**b**c", selectedText: "x", nearLine: 1) == nil)
+    }
+
+    @Test("returns nil when even tolerant match fails")
+    func tolerantFails() {
+        #expect(CriticMarkup.apply(.delete, to: "完全无关的内容", selectedText: "zzzqqq", nearLine: 1) == nil)
+    }
 }

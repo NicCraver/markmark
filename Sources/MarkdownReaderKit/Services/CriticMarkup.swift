@@ -25,21 +25,52 @@ public enum CriticMarkup {
     /// 在 `source` 中定位 `selectedText`，在多处出现时选取最接近 `nearLine`（1 基）的一处。
     /// 找不到或选区为空返回 nil。
     ///
-    /// 依赖渲染层已关闭智能排版（见 MarkdownHTMLService `.disableSmartOpts`），
-    /// 因此渲染视图里选中的文本与源码逐字一致，这里做精确匹配即可。
+    /// 两级策略（应对「渲染视图选区文本 ≠ 源码」的问题）：
+    /// 1. **精确匹配**：渲染层已关闭智能排版（`.disableSmartOpts`），多数纯文本/单一行内格式
+    ///    （如 `**粗**` 的内容是源码子串）能直接命中。
+    /// 2. **容错匹配**：选区跨越行内标记（`a**b**c` 选 "bc"）或软换行时，渲染纯文本不再是
+    ///    源码子串。此时把选区逐字符之间允许夹杂少量 Markdown 噪声（`* _ ~ \` \ ` 及空白）后再匹配。
+    ///    边界可能多包/少包一两个标记符，但能定位到位（参考 Hypothesis 的「精确失败→容错」策略）。
     public static func locateRange(in source: String, selectedText: String, nearLine: Int) -> Range<String.Index>? {
         guard !selectedText.isEmpty else { return nil }
 
+        // 第一级：精确
+        if let r = nearestRange(among: exactRanges(of: selectedText, in: source), in: source, nearLine: nearLine) {
+            return r
+        }
+        // 第二级：标记/空白容错
+        return nearestRange(among: tolerantRanges(of: selectedText, in: source), in: source, nearLine: nearLine)
+    }
+
+    /// 在 `source` 中查找 `needle` 的所有（非重叠）精确出现。
+    private static func exactRanges(of needle: String, in source: String) -> [Range<String.Index>] {
         var ranges: [Range<String.Index>] = []
         var searchStart = source.startIndex
         while searchStart < source.endIndex,
-              let r = source.range(of: selectedText, range: searchStart..<source.endIndex) {
+              let r = source.range(of: needle, range: searchStart..<source.endIndex) {
             ranges.append(r)
-            // 非重叠搜索：从本次匹配末尾继续
             searchStart = r.upperBound > r.lowerBound ? r.upperBound : source.index(after: r.lowerBound)
         }
-        guard !ranges.isEmpty else { return nil }
+        return ranges
+    }
 
+    /// 容错查找：把选区中的非空白字符依次匹配，字符之间允许夹杂 ≤8 个 Markdown 噪声/空白字符。
+    private static func tolerantRanges(of selectedText: String, in source: String) -> [Range<String.Index>] {
+        let tokens = selectedText.filter { !$0.isWhitespace }
+        // 太短不做容错（避免在长文里乱命中）；太长跳过（避免正则开销过大）
+        guard tokens.count >= 2, tokens.count <= 200 else { return [] }
+        let separator = "[\\s*_~`\\\\]{0,8}"
+        let pattern = tokens.map { NSRegularExpression.escapedPattern(for: String($0)) }
+            .joined(separator: separator)
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let ns = source as NSString
+        let matches = regex.matches(in: source, range: NSRange(location: 0, length: ns.length))
+        return matches.compactMap { Range($0.range, in: source) }
+    }
+
+    /// 在候选区间里选取起点行号最接近 `nearLine` 的一处。
+    private static func nearestRange(among ranges: [Range<String.Index>], in source: String, nearLine: Int) -> Range<String.Index>? {
+        guard !ranges.isEmpty else { return nil }
         var best = ranges[0]
         var bestDistance = Int.max
         for r in ranges {

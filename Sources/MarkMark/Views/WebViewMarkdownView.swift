@@ -65,8 +65,9 @@ struct WebViewMarkdownView: NSViewRepresentable {
     var isFindBarVisible: Bool = false
     var onVisibleHeadingChanged: ((MarkdownHTMLService.HeadingInfo?) -> Void)?
     var onVisibleLineChanged: ((Int) -> Void)?
-    var onCriticAction: ((CriticActionPayload) -> Void)?
-    /// CriticMarkup 选词工具条的本地化文案（键：delete/highlight/comment/replace/confirm/cancel/commentHint/replaceHint）
+    /// 返回是否成功定位并写入；失败时渲染层会闪一个「无法定位选区」提示。
+    var onCriticAction: ((CriticActionPayload) -> Bool)?
+    /// CriticMarkup 选词工具条的本地化文案（键：delete/highlight/comment/replace/confirm/cancel/edit/commentHint/replaceHint/notFound）
     var criticLabels: [String: String] = [:]
 
     /// 由父视图持有，使 PDF 导出可拿到当前 WKWebView。
@@ -352,7 +353,11 @@ struct WebViewMarkdownView: NSViewRepresentable {
                   let text = dict["text"] as? String else { return }
             let line = (dict["line"] as? Int) ?? 0
             let extra = dict["payload"] as? String
-            parent.onCriticAction?(CriticActionPayload(op: op, text: text, line: line, payload: extra))
+            let ok = parent.onCriticAction?(CriticActionPayload(op: op, text: text, line: line, payload: extra)) ?? true
+            if !ok {
+                // 容错匹配仍定位失败：渲染层闪一个提示，避免「静默无反应」
+                eval("MR.flashCriticError && MR.flashCriticError()")
+            }
         }
     }
 }

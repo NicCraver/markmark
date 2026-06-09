@@ -270,7 +270,9 @@ final class DocumentViewModel {
     /// 应用来自渲染视图选词工具条的 CriticMarkup 标注。
     /// 在源码中定位选中文本，包裹为对应的 CriticMarkup 语法并写回 `content`，
     /// 触发渲染视图重绘以显示标注样式。
-    func applyCriticAction(_ action: CriticActionPayload) {
+    /// - Returns: 是否成功定位并写入（失败时调用方可提示「无法定位选区」）。
+    @discardableResult
+    func applyCriticAction(_ action: CriticActionPayload) -> Bool {
         // 对已有评论的编辑/删除（action.text 为旧评论内容）
         switch action.op {
         case "editComment":
@@ -278,15 +280,17 @@ final class DocumentViewModel {
                 in: content, oldComment: action.text, newComment: action.payload ?? "", nearLine: action.line
             ) {
                 content = updated
+                return true
             }
-            return
+            return false
         case "deleteComment":
             if let updated = CriticMarkup.deleteComment(
                 in: content, comment: action.text, nearLine: action.line
             ) {
                 content = updated
+                return true
             }
-            return
+            return false
         default:
             break
         }
@@ -298,7 +302,7 @@ final class DocumentViewModel {
         case "comment":   op = .comment(action.payload ?? "")
         case "replace":   op = .replace(action.payload ?? "")
         case "insert":    op = .insert(action.payload ?? "")
-        default: return
+        default: return false
         }
         if let updated = CriticMarkup.apply(
             op,
@@ -307,7 +311,9 @@ final class DocumentViewModel {
             nearLine: action.line
         ) {
             content = updated
+            return true
         }
+        return false
     }
 
     /// 清除滚动请求（滚动完成后调用）

@@ -518,3 +518,27 @@ textarea.critic-field { min-height: 60px; }
 }
 /* 评论气泡可点击 */
 .critic-comment { cursor: pointer; }
+
+/* 定位失败轻提示 */
+#mr-critic-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 100000;
+  max-width: 80vw;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--danger) 92%, black);
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-body);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+#mr-critic-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

@@ -168,6 +168,7 @@ public enum L10n {
         case criticEdit
         case criticCommentHint
         case criticReplaceHint
+        case criticNotFound
 
         // 大纲
         case outlineTitle
@@ -355,6 +356,7 @@ public enum L10n {
         .criticEdit: "Edit",
         .criticCommentHint: "Add a comment…",
         .criticReplaceHint: "Replace with…",
+        .criticNotFound: "Could not locate the selection in the source",
         .fileModifiedExternallyTitle: "File Modified Externally",
         .fileModifiedExternallyMessage: "The file has been modified by another application. Reloading will discard your current changes.",
         .fileModifiedExternallyReload: "Reload",
@@ -526,6 +528,7 @@ public enum L10n {
         .criticEdit: "编辑",
         .criticCommentHint: "输入评论…",
         .criticReplaceHint: "替换为…",
+        .criticNotFound: "无法在源码中定位选区（试试只选不跨格式的文字）",
         .fileModifiedExternallyTitle: "文件已被外部修改",
         .fileModifiedExternallyMessage: "文件已被其他应用修改，重新加载将丢弃当前未保存的更改。",
         .fileModifiedExternallyReload: "重新加载",
@@ -697,6 +700,7 @@ public enum L10n {
         .criticEdit: "編輯",
         .criticCommentHint: "輸入評論…",
         .criticReplaceHint: "替換為…",
+        .criticNotFound: "無法在源碼中定位選區（試試只選不跨格式的文字）",
         .fileModifiedExternallyTitle: "檔案已被外部修改",
         .fileModifiedExternallyMessage: "檔案已被其他應用修改，重新載入將捨棄目前未儲存的變更。",
         .fileModifiedExternallyReload: "重新載入",

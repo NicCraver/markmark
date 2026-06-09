@@ -589,7 +589,23 @@
     criticLabels: {
       delete: 'Delete', highlight: 'Highlight', comment: 'Comment', replace: 'Replace',
       confirm: 'Apply', cancel: 'Cancel', edit: 'Edit',
-      commentHint: 'Add a comment…', replaceHint: 'Replace with…'
+      commentHint: 'Add a comment…', replaceHint: 'Replace with…',
+      notFound: 'Could not locate the selection in the source'
+    },
+
+    // 定位失败时的轻提示（避免「静默无反应」）
+    flashCriticError(msg) {
+      const text = msg || (MR.criticLabels && MR.criticLabels.notFound) || 'Could not locate the selection';
+      let el = document.getElementById('mr-critic-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'mr-critic-toast';
+        document.body.appendChild(el);
+      }
+      el.textContent = text;
+      el.classList.add('visible');
+      clearTimeout(MR._criticToastTimer);
+      MR._criticToastTimer = setTimeout(function() { el.classList.remove('visible'); }, 2200);
     },
 
     setCriticLabels(labels) {

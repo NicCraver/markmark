@@ -406,6 +406,7 @@ struct DetailView: View {
             "confirm": L10n.tr(.criticConfirm, language: language),
             "cancel": L10n.tr(.criticCancel, language: language),
             "edit": L10n.tr(.criticEdit, language: language),
+            "notFound": L10n.tr(.criticNotFound, language: language),
             "commentHint": L10n.tr(.criticCommentHint, language: language),
             "replaceHint": L10n.tr(.criticReplaceHint, language: language),
         ]
