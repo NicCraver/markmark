@@ -170,6 +170,18 @@ struct MarkdownReaderApp: App {
                     NotificationCenter.default.post(name: .toggleSidebar, object: nil)
                 }
                 .keyboardShortcut("\\", modifiers: .command)
+
+                Divider()
+
+                Button(L10n.tr(.displayModeRendered, language: language)) {
+                    NotificationCenter.default.post(name: .switchToRendered, object: nil)
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+
+                Button(L10n.tr(.displayModeRaw, language: language)) {
+                    NotificationCenter.default.post(name: .switchToRaw, object: nil)
+                }
+                .keyboardShortcut("r", modifiers: [.command, .shift])
             }
 
             // 查找菜单

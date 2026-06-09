@@ -254,16 +254,12 @@ final class DocumentViewModel {
     func switchDisplayMode(_ mode: DisplayMode) {
         // 纯文本模式下禁止切换到渲染模式
         if isPlainTextMode && mode == .rendered { return }
-        let previousMode = displayMode
         displayMode = mode
         if let url = currentFileURL {
             displayModeCache[url] = mode
         }
-        // Raw→Rendered：用光标行号同步渲染视图滚动位置
-        // Rendered→Raw：NSTextView 始终存活在 ZStack 中，自然保留滚动位置，无需额外操作
-        if previousMode == .raw && mode == .rendered {
-            requestScrollToLine(cursorLineNumber)
-        }
+        // 渲染视图与原文视图均常驻 ZStack（仅切换 opacity），各自保留滚动位置；
+        // 切换时不再强制同步滚动，避免「切回渲染跳到底部」。
     }
 
     /// 请求滚动到指定行号（大纲导航使用）

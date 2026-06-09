@@ -47,6 +47,20 @@ struct GeneralSettingsView: View {
 
             SettingsDivider()
 
+            // 默认显示模式
+            SettingsSection(
+                title: L10n.tr(.settingsGeneralDisplayMode, language: language)
+            ) {
+                Picker("", selection: $settings.defaultDisplayMode) {
+                    Text(L10n.tr(.displayModeRendered, language: language)).tag(DisplayMode.rendered)
+                    Text(L10n.tr(.displayModeRaw, language: language)).tag(DisplayMode.raw)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+            }
+
+            SettingsDivider()
+
             // 渲染宽度
             SettingsSection(
                 title: L10n.tr(.settingsGeneralRenderedWidthTitle, language: language),
