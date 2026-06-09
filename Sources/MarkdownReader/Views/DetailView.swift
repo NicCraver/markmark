@@ -212,58 +212,57 @@ struct DetailView: View {
                 .frame(width: 140)
                 .padding(.trailing, 8)
             }
+            // 操作按钮组与大纲图标下对齐，横向间隔一致
+            HStack(alignment: .bottom, spacing: 8) {
+                // 刷新按钮（文件被外部修改时显示，在保存按钮左侧）
+                if documentViewModel.hasDocument && documentViewModel.isFileModifiedExternally {
+                    Button {
+                        handleReloadButtonTapped()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeColors.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.tr(.titleBarReload, language: language))
+                }
 
-            // 刷新按钮（文件被外部修改时显示，在保存按钮左侧）
-            if documentViewModel.hasDocument && documentViewModel.isFileModifiedExternally {
+                // 保存按钮（在渲染模式切换右侧）
+                if documentViewModel.hasDocument {
+                    Button {
+                        NotificationCenter.default.post(name: .saveFile, object: nil)
+                    } label: {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(documentViewModel.isDirty ? themeColors.accent : themeColors.fgMuted)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!documentViewModel.isDirty)
+                    .help(L10n.tr(.titleBarSave, language: language))
+
+                    Button {
+                        exportPDF()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeColors.fgMuted)
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.tr(.titleBarExportPDF, language: language))
+                }
+
+                // 大纲切换按钮（始终显示在 titlebar 最右侧）
                 Button {
-                    handleReloadButtonTapped()
+                    appViewModel.toggleOutline()
                 } label: {
-                    Image(systemName: "arrow.clockwise")
+                    Image(systemName: "sidebar.right")
                         .font(.system(size: 14))
-                        .foregroundStyle(themeColors.accent)
+                        .foregroundStyle(outlineButtonColor)
                 }
                 .buttonStyle(.plain)
-                .help(L10n.tr(.titleBarReload, language: language))
-                .padding(.trailing, 4)
+                .disabled(!documentViewModel.hasDocument)
+                .help(L10n.tr(.titleBarToggleOutline, language: language))
             }
-
-            // 保存按钮（在渲染模式切换右侧）
-            if documentViewModel.hasDocument {
-                Button {
-                    NotificationCenter.default.post(name: .saveFile, object: nil)
-                } label: {
-                    Image(systemName: "arrow.down.doc.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(documentViewModel.isDirty ? themeColors.accent : themeColors.fgMuted)
-                }
-                .buttonStyle(.plain)
-                .disabled(!documentViewModel.isDirty)
-                .help(L10n.tr(.titleBarSave, language: language))
-                .padding(.trailing, 4)
-
-                Button {
-                    exportPDF()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 14))
-                        .foregroundStyle(themeColors.fgMuted)
-                }
-                .buttonStyle(.plain)
-                .help(L10n.tr(.titleBarExportPDF, language: language))
-                .padding(.trailing, 8)
-            }
-
-            // 大纲切换按钮（始终显示在 titlebar 最右侧）
-            Button {
-                appViewModel.toggleOutline()
-            } label: {
-                Image(systemName: "sidebar.right")
-                    .font(.system(size: 14))
-                    .foregroundStyle(outlineButtonColor)
-            }
-            .buttonStyle(.plain)
-            .disabled(!documentViewModel.hasDocument)
-            .help(L10n.tr(.titleBarToggleOutline, language: language))
             .padding(.trailing, 12)
         }
         .frame(height: 50)
