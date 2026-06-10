@@ -5,6 +5,18 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.6] - 2026-06-10
+
+### 修复
+
+- **检查更新指向错误仓库**：`UpdateService` 的 GitHub Releases 仓库从遗留的 `davidhoo/MarkdownReader` 修正为 `easychen/markmark`，不再误提示升级到上游 Markdown Reader 版本（#2，by @NicCraver）
+- **更新弹窗不跟随界面语言**：更新 sheet 挂在 WindowGroup 层、不在 ContentView 注入语言的子树内，导致弹窗恒为英文；现为 sheet 显式注入 `.environment(\.language)`（#2）
+
+### 变更
+
+- **DMG 手动安装弹窗优化**：使用本地化「安装说明」（简中/繁中/英文），从 Release body 提取 changelog 单独展示为「更新内容」，并替换遗留的 Markdown Reader 产品名（#2）
+- `release-local.sh` release notes 模板中的产品名更正为 MarkMark
+
 ## [2.0.5] - 2026-06-09
 
 ### 修复

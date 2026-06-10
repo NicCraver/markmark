@@ -97,7 +97,7 @@ cat > /tmp/release-body.md << 'BODY'
 ## 安装说明
 
 1. 下载 `.dmg` 文件，双击打开
-2. 将 **Markdown Reader** 拖入 **Applications** 文件夹
+2. 将 **MarkMark** 拖入 **Applications** 文件夹
 3. 首次打开时，macOS 可能提示「无法验证开发者」：
    - 打开 **系统设置 > 隐私与安全性**
    - 找到被阻止的 app，点击 **仍要打开**
