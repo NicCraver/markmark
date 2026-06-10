@@ -1,9 +1,10 @@
 name: Deploy GitHub Pages
 
+# pages/ 现在是纯静态站点（非 Jekyll），直接把目录作为构件上传部署。
 on:
   push:
     branches: [main]
-    paths: ['pages/**']
+    paths: ['pages/**', '.github/workflows/deploy-pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -16,38 +17,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
-          bundler-cache: true
-          cache-version: 0
-          working-directory: pages
-
-      - name: Build with Jekyll
-        working-directory: pages
-        run: bundle exec jekyll build
-        env:
-          JEKYLL_ENV: production
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: pages/_site
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Disable Jekyll processing
+        run: touch pages/.nojekyll
+
+      - name: Upload static site (pages/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
