@@ -175,6 +175,27 @@ h2{font-family:var(--display);font-weight:600;font-size:clamp(30px,4vw,46px);let
 .aiout .c-add{color:#7ee2a0}.aiout .c-del{color:#ff8b84;text-decoration:line-through}.aiout .c-cm{color:#ffd27e}
 .aiout .lbl{position:absolute;right:16px;top:16px;font-size:10px;color:#5c544b;letter-spacing:.1em}
 
+/* ---- changelog ---- */
+.rels{display:grid;gap:18px}
+.rel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 26px;box-shadow:var(--shadow)}
+.rel .relhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.rel .ver{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--red-ink)}
+.rel .date{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.rel .latest{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--green);
+  border:1px solid rgba(31,122,61,.35);background:var(--green-soft);border-radius:99px;padding:2px 9px}
+.rel h5{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:16px 0 8px}
+.rel h5.cat-add{color:var(--green)}
+.rel h5.cat-fix{color:var(--red-ink)}
+.rel ul{margin:0;padding-left:20px}
+.rel li{font-size:15.5px;color:var(--ink-soft);margin:5px 0;line-height:1.6}
+.rel li.sub-item{list-style:circle;margin-left:18px;font-size:14.5px}
+.rel li b{color:var(--ink);font-weight:600}
+.rel li code{font-family:var(--mono);font-size:12.5px;color:var(--red-ink);background:var(--paper-2);
+  border-radius:4px;padding:1px 5px}
+.rel-more{margin-top:22px;text-align:center}
+.rel-loading{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;padding:30px 0}
+
 /* ---- download band ---- */
 .download{background:var(--ink);color:var(--paper);border-radius:24px;padding:60px;text-align:center;position:relative;overflow:hidden}
 .download::before{content:"M";position:absolute;right:-30px;bottom:-80px;font-family:var(--display);font-weight:900;font-size:340px;color:rgba(240,50,42,.13);line-height:1}
@@ -214,6 +235,7 @@ footer a:hover{color:var(--red-ink)}
       <a href="#workflow">流程</a>
       <a href="#features">特性</a>
       <a href="#critic">CriticMarkup</a>
+      <a href="#changelog">更新日志</a>
       <a class="btn" href="#download">下载</a>
     </div>
   </div>
@@ -232,7 +254,7 @@ footer a:hover{color:var(--red-ink)}
       <div class="meta">
         <span><b>macOS 15+</b> · Intel &amp; Apple Silicon</span>
         <span><b>免费</b> · 开源 MIT</span>
-        <span><b>Universal</b> · 8.5 MB</span>
+        <span><b>Universal</b> · 约 9 MB</span>
       </div>
     </div>
 
@@ -257,7 +279,7 @@ footer a:hover{color:var(--red-ink)}
   <div class="wrap">
     <div class="kicker"><span class="num">01 — 工作流</span><span class="ln"></span></div>
     <h2>读 → 批 → 交给 AI 改，闭环。</h2>
-    <p class="sub">尤其适合审阅 AI 生成的 Markdown：在阅读时直接标出问题，让 AI 据此重写。</p>
+    <p class="sub">尤其适合审阅 AI 生成的 Markdown：打开文件或直接粘贴剪贴板内容（⌘N），标出问题，让 AI 据此重写。</p>
     <div class="steps">
       <div class="step">
         <div class="n">01</div>
@@ -268,13 +290,13 @@ footer a:hover{color:var(--red-ink)}
       <div class="step">
         <div class="n">02</div>
         <h4>边读边批</h4>
-        <p>在渲染好的文字上选中即可：删除、替换、高亮、加评论。标记以 CriticMarkup 写回原文。</p>
+        <p>在渲染好的文字上选中即可：删除、替换、高亮、加评论。标记以 CriticMarkup 写回原文，标注列表面板分组管理、勾选导出。</p>
         <div class="tag">// 选词 → 浮动工具条</div>
       </div>
       <div class="step">
         <div class="n">03</div>
         <h4>一键交给 AI</h4>
-        <p>复制带标记的全文，附上引导提示词，粘进任意大模型即可让它理解并修订。</p>
+        <p>复制带标记的全文（附可自定义的提示词模板），长文也可只复制有改动的标注片段。改完回来一键应用或放弃全部标注。</p>
         <div class="tag">// ⌘ 复制给 AI</div>
       </div>
     </div>
@@ -288,10 +310,10 @@ footer a:hover{color:var(--red-ink)}
     <p class="sub">原生、极小、即开即读——把复杂留给底层，把安静留给你。</p>
     <div class="grid">
       <div class="feat"><div class="ic k">¶</div><h4>忠实渲染</h4><p>Mermaid 图表、KaTeX 公式、30+ 语言代码高亮、表格脚注，关闭智能排版，与源码一字不差。</p></div>
-      <div class="feat"><div class="ic r">✎</div><h4>原位审阅</h4><p>在渲染视图里选词即标：删除 / 替换 / 评论 / 高亮，评论可查看、编辑、删除。</p></div>
-      <div class="feat"><div class="ic g">⧉</div><h4>复制给 AI</h4><p>带标记原文 + 引导提示词一键入剪贴板；也可只复制纯 CriticMarkup。</p></div>
+      <div class="feat"><div class="ic r">✎</div><h4>原位审阅</h4><p>在渲染视图里选词即标：删除 / 替换 / 评论 / 高亮。标注列表面板分组管理，可一键应用或放弃全部标注。</p></div>
+      <div class="feat"><div class="ic g">⧉</div><h4>复制给 AI</h4><p>带标记原文 + 可自定义提示词模板一键入剪贴板；长文只复制有改动的标注片段，省 token 不丢上下文。</p></div>
       <div class="feat"><div class="ic k">◑</div><h4>33 套主题</h4><p>20 深色 + 13 浅色，含 Markdown Preview Enhanced 风格，可自定义配色与对比度。</p></div>
-      <div class="feat"><div class="ic k">⚡</div><h4>原生 · 极小</h4><p>Swift + WKWebView 原生构建，启动快、内存省，Universal 二进制（Intel + Apple Silicon）约 8.5 MB。Quick Look 预览 + 命令行打开。</p></div>
+      <div class="feat"><div class="ic k">⚡</div><h4>原生 · 极小</h4><p>Swift + WKWebView 原生构建，启动快、内存省，Universal 二进制（Intel + Apple Silicon）约 9 MB。Quick Look 预览 + 命令行打开。</p></div>
       <div class="feat"><div class="ic r">♡</div><h4>免费 · 开源</h4><p>MIT 许可，代码全开。fork 自并致敬 davidhoo/MarkdownReader。</p></div>
     </div>
   </div>
@@ -318,6 +340,20 @@ footer a:hover{color:var(--red-ink)}
         <span class="c-del">{--并修复了全部已知缺陷--}</span>，是<br>
         <span class="c-del">{~~史上最佳版本</span> ~&gt; <span class="c-add">一次扎实的迭代~~}</span><span class="c-add">{++（补一句实测对比）++}</span>。
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="changelog" style="background:var(--paper-2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="kicker"><span class="num">04 — 更新日志</span><span class="ln"></span></div>
+    <h2>最近更新。</h2>
+    <p class="sub">数据来自 GitHub Releases，与发布版本实时同步。</p>
+    <div class="rels" id="rels">
+      <div class="rel-loading">加载更新记录…</div>
+    </div>
+    <div class="rel-more">
+      <a class="btn ghost" href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener">查看全部版本 →</a>
     </div>
   </div>
 </section>
@@ -361,6 +397,65 @@ btn && btn.addEventListener('click', async () => {
   btn.classList.add('ok');
   setTimeout(() => { btn.textContent = '⧉ 复制给 AI'; btn.classList.remove('ok'); }, 1600);
 });
+// 更新日志：从 GitHub Releases 拉取最近版本（与发布实时同步，无需手动维护）
+(async () => {
+  const box = document.getElementById('rels');
+  if (!box) return;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // 行内格式：**粗体** 与 `代码`
+  const inline = s => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // release body → HTML：跳过安装说明，只渲染 "## [x.y.z]" 之后的分类与条目
+  const renderBody = (body) => {
+    const lines = (body || '').split('\n');
+    const start = lines.findIndex(l => l.startsWith('## ['));
+    const slice = start >= 0 ? lines.slice(start) : lines;
+    let html = '', inList = false;
+    const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+    for (const line of slice) {
+      const cat = line.match(/^###\s+(.*)/);
+      const item = line.match(/^(\s*)-\s+(.*)/);
+      if (line.startsWith('## [')) continue;
+      if (cat) {
+        closeList();
+        const name = cat[1].trim();
+        const cls = name.includes('新增') ? ' class="cat-add"' : name.includes('修复') ? ' class="cat-fix"' : '';
+        html += `<h5${cls}>${esc(name)}</h5>`;
+      } else if (item) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        const sub = item[1].length > 0 ? ' class="sub-item"' : '';
+        html += `<li${sub}>${inline(item[2])}</li>`;
+      }
+    }
+    closeList();
+    // 旧版本 release body 为纯文本（无分类结构）：原样显示
+    if (!html && (body || '').trim()) {
+      html = `<ul><li>${inline(body.trim().split('\n')[0])}</li></ul>`;
+    }
+    return html;
+  };
+
+  try {
+    const res = await fetch('https://api.github.com/repos/easychen/markmark/releases?per_page=5');
+    if (!res.ok) throw new Error(res.status);
+    const releases = (await res.json()).filter(r => !r.draft && !r.prerelease).slice(0, 3);
+    if (!releases.length) throw new Error('empty');
+    box.innerHTML = releases.map((r, i) => `
+      <div class="rel">
+        <div class="relhead">
+          <span class="ver">${esc(r.tag_name)}</span>
+          <span class="date">${esc((r.published_at || '').slice(0, 10))}</span>
+          ${i === 0 ? '<span class="latest">LATEST</span>' : ''}
+        </div>
+        ${renderBody(r.body)}
+      </div>`).join('');
+  } catch (e) {
+    box.innerHTML = '<div class="rel-loading">加载失败 — 请前往 <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" style="text-decoration:underline">GitHub Releases</a> 查看更新记录。</div>';
+  }
+})();
+
 // strike-through draw-in for deletions
 document.querySelectorAll('.cm-del').forEach(el=>{
   el.style.textDecoration='none';el.style.position='relative';
