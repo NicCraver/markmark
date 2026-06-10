@@ -44,11 +44,16 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-echo "🔨 构建 ${APP_NAME} (${CONFIG}, ${ARCH})..."
+echo "🔨 构建 ${APP_NAME} (${CONFIG}, universal: arm64 + x86_64)..."
 
-swift build -c "$CONFIG" --arch arm64
+# Universal 构建：同时编译 Apple Silicon (arm64) 与 Intel (x86_64)。
+# 产物（fat 可执行文件、fat *_Module.o、资源 bundle）落在 .build/apple/Products/<Config>/
+swift build -c "$CONFIG" --arch arm64 --arch x86_64
 
+# arm64 单架构目录（仅用于个别中间产物）；universal 产物用 PRODUCTS_DIR
 BUILD_DIR="${PROJECT_DIR}/.build/${ARCH}-apple-macosx/${CONFIG}"
+if [ "$CONFIG" = "release" ]; then CONFIG_CAP="Release"; else CONFIG_CAP="Debug"; fi
+PRODUCTS_DIR="${PROJECT_DIR}/.build/apple/Products/${CONFIG_CAP}"
 
 # 修补 SPM 生成的 resource_bundle_accessor.swift
 # SPM 使用 Bundle.main.bundleURL 查找 bundle，但 macOS .app 的资源在 Contents/Resources/
@@ -60,11 +65,11 @@ while IFS= read -r accessor; do
         PATCHED=$((PATCHED + 1))
         echo "📝 修补 Bundle.module 路径: $accessor"
     fi
-done < <(find "${BUILD_DIR}" -name "resource_bundle_accessor.swift" -type f)
+done < <(find "${PROJECT_DIR}/.build" -name "resource_bundle_accessor.swift" -type f)
 
 if [[ "$PATCHED" -gt 0 ]]; then
     echo "🔨 重新编译（应用 Bundle.module 修补）..."
-    swift build -c "$CONFIG" --arch arm64
+    swift build -c "$CONFIG" --arch arm64 --arch x86_64
 fi
 
 APP_BUNDLE="${PROJECT_DIR}/${APP_BUNDLE_NAME}.app"
@@ -76,8 +81,8 @@ rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
-# 复制可执行文件
-cp "${BUILD_DIR}/${APP_NAME}" "$APP_BUNDLE/Contents/MacOS/"
+# 复制可执行文件（universal fat binary）
+cp "${PRODUCTS_DIR}/${APP_NAME}" "$APP_BUNDLE/Contents/MacOS/"
 
 # Strip 主二进制（去除本地符号表，保留外部符号以便动态链接）
 # 符号信息仍可通过 dSYM 获取，不影响崩溃符号化
@@ -85,8 +90,8 @@ echo "🔪 Strip 主二进制..."
 strip -x "$APP_BUNDLE/Contents/MacOS/${APP_NAME}"
 
 # 复制资源 bundle（Swift Package Manager 编译的资源）
-if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
-    cp -R "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" "$APP_BUNDLE/Contents/Resources/"
+if [ -d "${PRODUCTS_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
+    cp -R "${PRODUCTS_DIR}/${APP_NAME}_MarkMark.bundle" "$APP_BUNDLE/Contents/Resources/"
 
     # 移除 SPM bundle 中的 AppIcon（已通过 actool 编译到 Assets.car 中提供，无需重复）
     SPM_BUNDLE="${APP_BUNDLE}/Contents/Resources/${APP_NAME}_MarkMark.bundle"
@@ -102,7 +107,7 @@ if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
 fi
 
 # 复制依赖包的资源 bundle（Textual 的 prism-bundle.js 等）
-for bundle in "${BUILD_DIR}"/*.bundle; do
+for bundle in "${PRODUCTS_DIR}"/*.bundle; do
     bundle_name=$(basename "$bundle")
     if [[ "$bundle_name" != "${APP_NAME}_MarkMark.bundle" ]]; then
         cp -R "$bundle" "$APP_BUNDLE/Contents/Resources/"
@@ -201,26 +206,19 @@ mkdir -p "${QL_APPEX}/Contents/Resources"
 CLANG=$(xcrun -f clang)
 SDK=$(xcrun --show-sdk-path)
 
-QL_OBJECTS="${BUILD_DIR}/${QL_EXT_NAME}.build"
-KIT_OBJECTS="${BUILD_DIR}/MarkdownReaderKit.build"
-
-# 收集所有依赖的 .o 文件（cmark_gfm, cmark_gfm_extensions, CAtomic, Markdown）
-DEP_OBJS=()
-for dep_dir in "${BUILD_DIR}/cmark_gfm.build" \
-               "${BUILD_DIR}/cmark_gfm_extensions.build" \
-               "${BUILD_DIR}/CAtomic.build" \
-               "${BUILD_DIR}/Markdown.build"; do
-    if [ -d "$dep_dir" ]; then
-        for obj in "$dep_dir"/*.o; do
-            [ -f "$obj" ] && DEP_OBJS+=("$obj")
-        done
-    fi
+# Universal 链接：使用 .build/apple/Products/<Config>/ 下的 fat（arm64+x86_64）*_Module.o，
+# 配合 clang 同时传 -arch arm64 -arch x86_64，一步产出 universal 的 QL 扩展二进制。
+QL_MODULE_OBJS=()
+for mod in "${QL_EXT_NAME}_Module" MarkdownReaderKit_Module Markdown_Module \
+           cmark-gfm_Module cmark-gfm-extensions_Module CAtomic_Module; do
+    obj="${PRODUCTS_DIR}/${mod}.o"
+    [ -f "$obj" ] && QL_MODULE_OBJS+=("$obj")
 done
 
-if [ -d "$QL_OBJECTS" ] && [ -d "$KIT_OBJECTS" ]; then
-    echo "🔧 链接 Quick Look Extension (entry: NSExtensionMain)..."
+if [ "${#QL_MODULE_OBJS[@]}" -ge 2 ]; then
+    echo "🔧 链接 Quick Look Extension (universal, entry: NSExtensionMain)..."
     SWIFT_LIB_DIR="$(xcrun -f swiftc 2>/dev/null | xargs dirname)/../lib/swift/macosx"
-    "$CLANG" -arch arm64 \
+    "$CLANG" -arch arm64 -arch x86_64 \
         -e _NSExtensionMain \
         -u _NSExtensionMain \
         -isysroot "$SDK" \
@@ -228,12 +226,10 @@ if [ -d "$QL_OBJECTS" ] && [ -d "$KIT_OBJECTS" ]; then
         -framework Foundation -framework CoreFoundation \
         -framework SwiftUI -framework UniformTypeIdentifiers \
         -o "$QL_BINARY" \
-        "${QL_OBJECTS}/"*.o \
-        "${KIT_OBJECTS}/"*.o \
-        "${DEP_OBJS[@]}" \
+        "${QL_MODULE_OBJS[@]}" \
         -rpath @executable_path/../Frameworks \
         -rpath /usr/lib/swift \
-        -L "${BUILD_DIR}" \
+        -L "${PRODUCTS_DIR}" \
         -L "$SWIFT_LIB_DIR" \
         -lswiftCompatibility56 -lswiftCompatibilityConcurrency \
         -lm -lSystem \
@@ -264,8 +260,8 @@ else
 fi
 
 # 复制主应用的资源 bundle 到 Extension（Extension 运行在独立进程中，无法直接访问主 app 的资源）
-if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
-    cp -R "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" "${QL_APPEX}/Contents/Resources/"
+if [ -d "${PRODUCTS_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
+    cp -R "${PRODUCTS_DIR}/${APP_NAME}_MarkMark.bundle" "${QL_APPEX}/Contents/Resources/"
 
     # QL Extension 不需要 AppIcon（Extension 不显示自己的图标）
     QL_BUNDLE="${QL_APPEX}/Contents/Resources/${APP_NAME}_MarkMark.bundle"
@@ -286,7 +282,7 @@ if [ -d "${BUILD_DIR}/${APP_NAME}_MarkMark.bundle" ]; then
 fi
 
 # 复制依赖包的资源 bundle 到 Extension
-for bundle in "${BUILD_DIR}"/*.bundle; do
+for bundle in "${PRODUCTS_DIR}"/*.bundle; do
     bundle_name=$(basename "$bundle")
     if [[ "$bundle_name" != "${APP_NAME}_MarkMark.bundle" ]]; then
         cp -R "$bundle" "${QL_APPEX}/Contents/Resources/"
