@@ -84,6 +84,7 @@ struct MarkdownReaderApp: App {
                 // 自动更新弹窗
                 .sheet(isPresented: $updateViewModel.isShowingUpdateSheet) {
                     UpdateView(viewModel: updateViewModel)
+                        .environment(\.language, language)
                 }
                 // 启动时自动检查更新（延迟 2 秒，避免影响启动速度）
                 .task {

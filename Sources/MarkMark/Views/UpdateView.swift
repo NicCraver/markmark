@@ -70,19 +70,28 @@ struct UpdateView: View {
             // 安装模式提示
             installModeHint
 
-            // Release notes
-            if !release.body.isEmpty {
-                ScrollView {
-                    Text(release.body)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                }
-                .frame(maxHeight: 160)
-                .padding(8)
-                .background(.quaternary.opacity(0.3))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+            // DMG 手动安装：使用本地化说明，避免展示 GitHub Release 中的旧版 Markdown Reader 文案
+            if viewModel.installMode == .dmg {
+                releaseNotesSection(
+                    title: L10n.tr(.updateInstallInstructionsTitle, language: language),
+                    body: L10n.tr(.updateManualInstallInstructions, language: language),
+                    scrollHeight: 168
+                )
+            }
+
+            let changelog = ReleaseNotesFormatter.changelog(from: release.body)
+            if !changelog.isEmpty {
+                let changelogLines = changelog.components(separatedBy: "\n").count
+                releaseNotesSection(
+                    title: L10n.tr(.updateReleaseNotesTitle, language: language),
+                    body: changelog,
+                    scrollHeight: changelogLines > 3 ? 96 : nil
+                )
+            } else if viewModel.installMode == .zip, !release.body.isEmpty {
+                releaseNotesSection(
+                    title: nil,
+                    body: ReleaseNotesFormatter.sanitize(release.body)
+                )
             }
 
             // 下载进度
@@ -120,6 +129,43 @@ struct UpdateView: View {
             // 按钮
             actionButtons(release: release)
         }
+    }
+
+    /// scrollHeight 为 nil 时按内容高度自适应；有值时固定高度并启用纵向滚动
+    private func releaseNotesSection(
+        title: String?,
+        body: String,
+        scrollHeight: CGFloat? = 160
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let title {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            Group {
+                if let scrollHeight {
+                    ScrollView(.vertical, showsIndicators: true) {
+                        notesText(body)
+                    }
+                    .frame(height: scrollHeight)
+                } else {
+                    notesText(body)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(8)
+            .background(.quaternary.opacity(0.3))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    private func notesText(_ body: String) -> some View {
+        Text(body)
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .textSelection(.enabled)
     }
 
     /// 安装模式提示文字
@@ -240,5 +286,40 @@ struct UpdateView: View {
                 .keyboardShortcut(.defaultAction)
             }
         }
+    }
+}
+
+// MARK: - Release Notes 格式化
+
+/// 从 GitHub Release body 中提取更新说明，并替换遗留产品名
+private enum ReleaseNotesFormatter {
+    private static let installSectionHeaders = [
+        "## 安装说明",
+        "## 安裝說明",
+        "## Installation",
+    ]
+
+    static func sanitize(_ body: String) -> String {
+        body
+            .replacingOccurrences(of: "Markdown Reader", with: "MarkMark")
+            .replacingOccurrences(of: "MarkdownReader.app", with: "MarkMark.app")
+            .replacingOccurrences(of: "MarkdownReader", with: "MarkMark")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// 去掉 Release 模板中的安装说明，仅保留 changelog
+    static func changelog(from body: String) -> String {
+        let text = sanitize(body)
+        guard !text.isEmpty else { return "" }
+
+        if let separator = text.range(of: "\n---\n") {
+            return String(text[separator.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if installSectionHeaders.contains(where: { text.hasPrefix($0) }) {
+            return ""
+        }
+
+        return text
     }
 }

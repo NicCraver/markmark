@@ -4,7 +4,7 @@ import os
 /// GitHub Release 信息
 struct GitHubRelease: Sendable {
     let tagName: String      // e.g. "v1.0.3"
-    let name: String         // e.g. "MarkdownReader 1.0.3"
+    let name: String         // e.g. "MarkMark 2.0.5"
     let body: String         // Release notes (Markdown)
     let htmlURL: URL         // GitHub Release 页面链接
     let zipDownloadURL: URL? // ZIP 下载链接（从 assets 中匹配）
@@ -18,10 +18,10 @@ final class UpdateService: Sendable {
     // MARK: - 常量
 
     /// GitHub 仓库所有者
-    private static let owner = "davidhoo"
+    private static let owner = "easychen"
 
     /// GitHub 仓库名称
-    private static let repo = "MarkdownReader"
+    private static let repo = "markmark"
 
     /// GitHub Releases API 端点
     private static let releasesURL = "https://api.github.com/repos/\(owner)/\(repo)/releases/latest"
@@ -68,7 +68,7 @@ final class UpdateService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("MarkdownReader/\(Self.currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("MarkMark/\(Self.currentVersion)", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

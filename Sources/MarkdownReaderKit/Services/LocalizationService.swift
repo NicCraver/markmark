@@ -222,6 +222,9 @@ public enum L10n {
         case updateError
         case updateModeAuto
         case updateModeManual
+        case updateInstallInstructionsTitle
+        case updateManualInstallInstructions
+        case updateReleaseNotesTitle
         case checkForUpdates
 
         // 查找替换
@@ -402,6 +405,9 @@ public enum L10n {
         .updateError: "Update check failed.",
         .updateModeAuto: "Auto install & restart",
         .updateModeManual: "Manual install required",
+        .updateInstallInstructionsTitle: "Installation",
+        .updateManualInstallInstructions: "1. Download the .dmg file and open it\n2. Drag MarkMark into the Applications folder\n3. On first launch, macOS may say the developer cannot be verified:\n   \u{2022} Open System Settings \u{2192} Privacy & Security\n   \u{2022} Find the blocked app and click Open Anyway\n   \u{2022} Or run in Terminal: xattr -cr /Applications/MarkMark.app\n4. You can also right-click the app and choose Open",
+        .updateReleaseNotesTitle: "Release Notes",
         .checkForUpdates: "Check for Updates\u{2026}",
         .findBarSearchPlaceholder: "Search",
         .findBarReplacePlaceholder: "Replace",
@@ -574,6 +580,9 @@ public enum L10n {
         .updateError: "检查更新失败。",
         .updateModeAuto: "自动安装并重启",
         .updateModeManual: "需手动安装",
+        .updateInstallInstructionsTitle: "安装说明",
+        .updateManualInstallInstructions: "1. 下载 .dmg 文件，双击打开\n2. 将 MarkMark 拖入「应用程序」文件夹\n3. 首次打开时，macOS 可能提示「无法验证开发者」：\n   \u{2022} 打开「系统设置 \u{2192} 隐私与安全性」\n   \u{2022} 找到被阻止的 app，点击「仍要打开」\n   \u{2022} 或在终端运行：xattr -cr /Applications/MarkMark.app\n4. 也可以直接右键点击 app \u{2192} 选择「打开」",
+        .updateReleaseNotesTitle: "更新内容",
         .checkForUpdates: "检查更新\u{2026}",
         .findBarSearchPlaceholder: "搜索",
         .findBarReplacePlaceholder: "替换",
@@ -746,6 +755,9 @@ public enum L10n {
         .updateError: "檢查更新失敗。",
         .updateModeAuto: "自動安裝並重新啟動",
         .updateModeManual: "需手動安裝",
+        .updateInstallInstructionsTitle: "安裝說明",
+        .updateManualInstallInstructions: "1. 下載 .dmg 檔案，雙擊開啟\n2. 將 MarkMark 拖入「應用程式」資料夾\n3. 首次開啟時，macOS 可能提示「無法驗證開發者」：\n   \u{2022} 開啟「系統設定 \u{2192} 隱私權與安全性」\n   \u{2022} 找到被阻擋的 app，點擊「仍要開啟」\n   \u{2022} 或在終端機執行：xattr -cr /Applications/MarkMark.app\n4. 也可以直接右鍵點擊 app \u{2192} 選擇「開啟」",
+        .updateReleaseNotesTitle: "更新內容",
         .checkForUpdates: "檢查更新\u{2026}",
         .findBarSearchPlaceholder: "搜尋",
         .findBarReplacePlaceholder: "取代",
