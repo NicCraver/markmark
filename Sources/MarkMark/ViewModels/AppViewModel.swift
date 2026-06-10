@@ -67,6 +67,9 @@ final class AppViewModel {
     /// 大纲侧边栏最大宽度
     static let maxOutlineWidth: CGFloat = 350
 
+    /// 标注列表面板是否可见（与大纲面板互斥，共用宽度与拖拽手柄）
+    var isAnnotationPanelVisible: Bool = false
+
     // MARK: - 设置状态
 
     /// 是否显示设置界面（窗口内状态切换，而非弹窗）
@@ -107,6 +110,18 @@ final class AppViewModel {
         withAnimation(.spring(duration: 0.25)) {
             isOutlineVisible.toggle()
             if isOutlineVisible {
+                isAnnotationPanelVisible = false
+                outlineWidth = Self.defaultOutlineWidth
+            }
+        }
+    }
+
+    /// 切换标注列表面板显隐（与大纲互斥）
+    func toggleAnnotationPanel() {
+        withAnimation(.spring(duration: 0.25)) {
+            isAnnotationPanelVisible.toggle()
+            if isAnnotationPanelVisible {
+                isOutlineVisible = false
                 outlineWidth = Self.defaultOutlineWidth
             }
         }

@@ -33,11 +33,22 @@ struct WelcomeView: View {
                 .font(.subheadline)
                 .foregroundStyle(themeColors.fgMuted)
 
-            Button(L10n.tr(.open, language: language)) {
-                OpenPanelHelper.show(language: language)
+            HStack(spacing: 10) {
+                Button(L10n.tr(.open, language: language)) {
+                    OpenPanelHelper.show(language: language)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                // 从剪贴板新建标注：粘贴 Markdown 直接进入标注流程
+                Button {
+                    NotificationCenter.default.post(name: .newFromClipboard, object: nil)
+                } label: {
+                    Label(L10n.tr(.newFromClipboard, language: language), systemImage: "doc.on.clipboard")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
             .padding(.top, 8)
 
             if !recentFiles.isEmpty {

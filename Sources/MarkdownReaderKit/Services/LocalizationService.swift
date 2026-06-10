@@ -110,8 +110,9 @@ public enum L10n {
         case reset
         case confirm
 
-        // 菜单
-        case menuNewFile
+        // 菜单 / 剪贴板标注
+        case newFromClipboard
+        case clipboardScratchName
 
         // 未保存更改提醒
         case unsavedChangesTitle
@@ -143,7 +144,6 @@ public enum L10n {
         case titleBarToggleSidebar
         case titleBarDisplayMode
         case titleBarOpen
-        case titleBarNewFile
         case titleBarSave
         case titleBarReload
         case titleBarToggleOutline
@@ -152,13 +152,33 @@ public enum L10n {
         // CriticMarkup 审阅标注
         case titleBarCopyForAI
         case titleBarCopyMenu
-        case titleBarClearAnnotations
         case copyForAIMenu
         case copyCriticMenu
+        case copyFragmentsMenu
+        case copyPromptMenu
         case copiedToast
-        case clearAnnotationsMenu
-        case clearAnnotationsConfirmTitle
-        case clearAnnotationsConfirmMessage
+        // 应用 / 放弃所有标注
+        case titleBarAnnotationActions
+        case applyAnnotationsMenu
+        case applyAnnotationsConfirmTitle
+        case applyAnnotationsConfirmMessage
+        case discardAnnotationsMenu
+        case discardAnnotationsConfirmTitle
+        case discardAnnotationsConfirmMessage
+        // 标注列表面板
+        case titleBarAnnotationPanel
+        case annotationGroupNew
+        case annotationGroupHistory
+        case annotationSelectAll
+        case annotationSelectNew
+        case annotationCopySelected
+        case annotationStale
+        case annotationEmpty
+        // AI 提示词模板
+        case aiPromptDefaultTemplate
+        case settingsAIPromptTitle
+        case settingsAIPromptDescription
+        case settingsAIPromptReset
         case criticDelete
         case criticHighlight
         case criticComment
@@ -318,7 +338,8 @@ public enum L10n {
         .save: "Save",
         .reset: "Reset",
         .confirm: "OK",
-        .menuNewFile: "New File",
+        .newFromClipboard: "New Annotation from Clipboard",
+        .clipboardScratchName: "Clipboard Annotation",
         .unsavedChangesTitle: "Unsaved Changes",
         .unsavedChangesMessage: "Your changes will be lost if you don't save them. Do you want to save before closing?",
         .unsavedSave: "Save",
@@ -336,20 +357,47 @@ public enum L10n {
         .titleBarToggleSidebar: "Toggle Sidebar (⌘\\)",
         .titleBarDisplayMode: "Display Mode",
         .titleBarOpen: "Open (⌘O)",
-        .titleBarNewFile: "New File",
         .titleBarSave: "Save (⌘S)",
         .titleBarReload: "Reload",
         .titleBarToggleOutline: "Toggle Outline",
         .titleBarCopyPath: "Copy Path",
         .titleBarCopyForAI: "Copy annotated doc for AI",
         .titleBarCopyMenu: "Copy: CriticMarkup or for AI",
-        .titleBarClearAnnotations: "Clear all annotations",
         .copyForAIMenu: "Copy for AI (with instructions)",
         .copyCriticMenu: "Copy CriticMarkup",
+        .copyFragmentsMenu: "Copy New Annotated Fragments",
+        .copyPromptMenu: "Copy AI Prompt",
         .copiedToast: "Copied",
-        .clearAnnotationsMenu: "Clear Annotations",
-        .clearAnnotationsConfirmTitle: "Clear all annotations?",
-        .clearAnnotationsConfirmMessage: "This removes every CriticMarkup mark and restores the original text. This cannot be undone.",
+        .titleBarAnnotationActions: "Apply or discard all annotations",
+        .applyAnnotationsMenu: "Apply All Annotations…",
+        .applyAnnotationsConfirmTitle: "Apply all annotations?",
+        .applyAnnotationsConfirmMessage: "Deletions and replacements will be applied to the text; highlights and comments will be removed. This cannot be undone.",
+        .discardAnnotationsMenu: "Discard All Annotations…",
+        .discardAnnotationsConfirmTitle: "Discard all annotations?",
+        .discardAnnotationsConfirmMessage: "This removes every CriticMarkup mark and restores the original text. This cannot be undone.",
+        .titleBarAnnotationPanel: "Annotations",
+        .annotationGroupNew: "New this session",
+        .annotationGroupHistory: "Existing",
+        .annotationSelectAll: "Select All",
+        .annotationSelectNew: "New Only",
+        .annotationCopySelected: "Copy Selected Fragments",
+        .annotationStale: "Stale",
+        .annotationEmpty: "No annotations",
+        .aiPromptDefaultTemplate: """
+        The content below contains review annotations in CriticMarkup syntax:
+        - {++ addition ++}        suggested addition
+        - {-- deletion --}        suggested removal
+        - {~~ old ~> new ~~}      suggested replacement
+        - {>> comment <<}         my comment/question
+        - {== highlight ==}       part I want to focus on
+
+        ---
+
+        {{MarkMark:content}}
+        """,
+        .settingsAIPromptTitle: "AI Prompt Template",
+        .settingsAIPromptDescription: "Used by \"Copy for AI\" and \"Copy AI Prompt\". {{MarkMark:content}} marks where the document is inserted.",
+        .settingsAIPromptReset: "Restore Default",
         .criticDelete: "Delete",
         .criticHighlight: "Highlight",
         .criticComment: "Comment",
@@ -493,7 +541,8 @@ public enum L10n {
         .save: "保存",
         .reset: "重置",
         .confirm: "确认",
-        .menuNewFile: "新建文件",
+        .newFromClipboard: "从剪贴板新建标注",
+        .clipboardScratchName: "剪贴板标注",
         .unsavedChangesTitle: "未保存的更改",
         .unsavedChangesMessage: "如果不保存，您的更改将会丢失。关闭前是否保存？",
         .unsavedSave: "保存",
@@ -511,20 +560,47 @@ public enum L10n {
         .titleBarToggleSidebar: "切换侧边栏 (⌘\\)",
         .titleBarDisplayMode: "显示模式",
         .titleBarOpen: "打开 (⌘O)",
-        .titleBarNewFile: "新建文件",
         .titleBarSave: "保存 (⌘S)",
         .titleBarReload: "重新加载",
         .titleBarToggleOutline: "切换大纲",
         .titleBarCopyPath: "复制路径",
         .titleBarCopyForAI: "复制标注文档给 AI",
         .titleBarCopyMenu: "复制：CriticMarkup 原文 或 给 AI（含说明）",
-        .titleBarClearAnnotations: "清除全部标注",
         .copyForAIMenu: "复制给 AI（含说明）",
         .copyCriticMenu: "复制 CriticMarkup",
+        .copyFragmentsMenu: "复制本次新增的标注片段",
+        .copyPromptMenu: "复制 AI 提示词",
         .copiedToast: "已复制",
-        .clearAnnotationsMenu: "清除标注",
-        .clearAnnotationsConfirmTitle: "清除全部标注？",
-        .clearAnnotationsConfirmMessage: "将移除所有 CriticMarkup 标注并恢复原文，此操作无法撤销。",
+        .titleBarAnnotationActions: "应用或放弃所有标注",
+        .applyAnnotationsMenu: "应用所有标注…",
+        .applyAnnotationsConfirmTitle: "应用所有标注？",
+        .applyAnnotationsConfirmMessage: "删除和替换将直接修改正文，高亮和评论将被移除。此操作无法撤销。",
+        .discardAnnotationsMenu: "放弃所有标注…",
+        .discardAnnotationsConfirmTitle: "放弃所有标注？",
+        .discardAnnotationsConfirmMessage: "将移除所有 CriticMarkup 标注并恢复原文，此操作无法撤销。",
+        .titleBarAnnotationPanel: "标注列表",
+        .annotationGroupNew: "本次新增",
+        .annotationGroupHistory: "历史标注",
+        .annotationSelectAll: "全选",
+        .annotationSelectNew: "只选新增",
+        .annotationCopySelected: "复制所选片段",
+        .annotationStale: "已失效",
+        .annotationEmpty: "暂无标注",
+        .aiPromptDefaultTemplate: """
+        下面的内容中包含使用 CriticMarkup 语法的审阅标注，标记含义如下：
+        - {++ 新增内容 ++}        建议新增
+        - {-- 删除内容 --}        建议删除
+        - {~~ 旧内容 ~> 新内容 ~~} 建议替换为新内容
+        - {>> 评论 <<}            我的评论/疑问
+        - {== 高亮内容 ==}        我重点关注的部分
+
+        ---
+
+        {{MarkMark:content}}
+        """,
+        .settingsAIPromptTitle: "AI 提示词模板",
+        .settingsAIPromptDescription: "「复制给 AI」与「复制 AI 提示词」共用。{{MarkMark:content}} 为正文插入位置占位符。",
+        .settingsAIPromptReset: "恢复默认",
         .criticDelete: "删除",
         .criticHighlight: "高亮",
         .criticComment: "评论",
@@ -668,7 +744,8 @@ public enum L10n {
         .save: "儲存",
         .reset: "重設",
         .confirm: "確認",
-        .menuNewFile: "新增檔案",
+        .newFromClipboard: "從剪貼簿新建標註",
+        .clipboardScratchName: "剪貼簿標註",
         .unsavedChangesTitle: "未儲存的變更",
         .unsavedChangesMessage: "如果不儲存，您的變更將會遺失。關閉前是否儲存？",
         .unsavedSave: "儲存",
@@ -686,20 +763,47 @@ public enum L10n {
         .titleBarToggleSidebar: "切換側邊欄 (⌘\\)",
         .titleBarDisplayMode: "顯示模式",
         .titleBarOpen: "開啟 (⌘O)",
-        .titleBarNewFile: "新增檔案",
         .titleBarSave: "儲存 (⌘S)",
         .titleBarReload: "重新載入",
         .titleBarToggleOutline: "切換大綱",
         .titleBarCopyPath: "複製路徑",
         .titleBarCopyForAI: "複製標註文件給 AI",
         .titleBarCopyMenu: "複製：CriticMarkup 原文 或 給 AI（含說明）",
-        .titleBarClearAnnotations: "清除全部標註",
         .copyForAIMenu: "複製給 AI（含說明）",
         .copyCriticMenu: "複製 CriticMarkup",
+        .copyFragmentsMenu: "複製本次新增的標註片段",
+        .copyPromptMenu: "複製 AI 提示詞",
         .copiedToast: "已複製",
-        .clearAnnotationsMenu: "清除標註",
-        .clearAnnotationsConfirmTitle: "清除全部標註？",
-        .clearAnnotationsConfirmMessage: "將移除所有 CriticMarkup 標註並恢復原文，此操作無法復原。",
+        .titleBarAnnotationActions: "套用或放棄所有標註",
+        .applyAnnotationsMenu: "套用所有標註…",
+        .applyAnnotationsConfirmTitle: "套用所有標註？",
+        .applyAnnotationsConfirmMessage: "刪除和替換將直接修改正文，高亮和評論將被移除。此操作無法復原。",
+        .discardAnnotationsMenu: "放棄所有標註…",
+        .discardAnnotationsConfirmTitle: "放棄所有標註？",
+        .discardAnnotationsConfirmMessage: "將移除所有 CriticMarkup 標註並恢復原文，此操作無法復原。",
+        .titleBarAnnotationPanel: "標註清單",
+        .annotationGroupNew: "本次新增",
+        .annotationGroupHistory: "歷史標註",
+        .annotationSelectAll: "全選",
+        .annotationSelectNew: "只選新增",
+        .annotationCopySelected: "複製所選片段",
+        .annotationStale: "已失效",
+        .annotationEmpty: "暫無標註",
+        .aiPromptDefaultTemplate: """
+        下面的內容中包含使用 CriticMarkup 語法的審閱標註，標記含義如下：
+        - {++ 新增內容 ++}        建議新增
+        - {-- 刪除內容 --}        建議刪除
+        - {~~ 舊內容 ~> 新內容 ~~} 建議替換為新內容
+        - {>> 評論 <<}            我的評論/疑問
+        - {== 高亮內容 ==}        我重點關注的部分
+
+        ---
+
+        {{MarkMark:content}}
+        """,
+        .settingsAIPromptTitle: "AI 提示詞模板",
+        .settingsAIPromptDescription: "「複製給 AI」與「複製 AI 提示詞」共用。{{MarkMark:content}} 為正文插入位置佔位符。",
+        .settingsAIPromptReset: "恢復預設",
         .criticDelete: "刪除",
         .criticHighlight: "高亮",
         .criticComment: "評論",

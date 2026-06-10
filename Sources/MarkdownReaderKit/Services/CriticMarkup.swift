@@ -180,27 +180,322 @@ public enum CriticMarkup {
         return false
     }
 
+    // MARK: - 标注解析
+
+    /// 文档中一处已存在的 CriticMarkup 标注。
+    /// `range` 基于解析时的源码，内容变化后即失效，需重新解析。
+    public struct Annotation: Equatable, Sendable {
+        public enum Kind: String, Sendable {
+            case addition       // {++ ++}
+            case deletion       // {-- --}
+            case substitution   // {~~ ~> ~~}
+            case highlight      // {== ==}
+            case comment        // {>> <<}（含「高亮+评论」合并形态）
+        }
+        public let kind: Kind
+        /// 标注主体文本（高亮/删除/新增的内容、替换的旧文本、纯评论的评论内容）
+        public let text: String
+        /// 替换的新文本 / 高亮所附的评论内容
+        public let payload: String?
+        /// 标注起始处行号（1 基）
+        public let line: Int
+        /// 整个标记（含定界符）在源码中的范围
+        public let range: Range<String.Index>
+
+        public init(kind: Kind, text: String, payload: String?, line: Int, range: Range<String.Index>) {
+            self.kind = kind
+            self.text = text
+            self.payload = payload
+            self.line = line
+            self.range = range
+        }
+    }
+
+    /// 解析文档中的全部 CriticMarkup 标注，按出现顺序返回。
+    /// 评论工作流产物 `{==X==}{>>C<<}`（紧邻）合并为一条 comment 标注（text=X, payload=C）。
+    public static func parseAnnotations(in source: String) -> [Annotation] {
+        struct RawMatch {
+            let kind: Annotation.Kind
+            let range: Range<String.Index>
+            let text: String
+            let payload: String?
+        }
+        let patterns: [(Annotation.Kind, String)] = [
+            (.substitution, #"\{~~([\s\S]*?)~>([\s\S]*?)~~\}"#),
+            (.addition, #"\{\+\+([\s\S]*?)\+\+\}"#),
+            (.deletion, #"\{--([\s\S]*?)--\}"#),
+            (.highlight, #"\{==([\s\S]*?)==\}"#),
+            (.comment, #"\{>>([\s\S]*?)<<\}"#),
+        ]
+        let ns = source as NSString
+        let full = NSRange(location: 0, length: ns.length)
+        var raws: [RawMatch] = []
+        for (kind, pattern) in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            for m in regex.matches(in: source, range: full) {
+                guard let r = Range(m.range, in: source),
+                      let g1 = Range(m.range(at: 1), in: source) else { continue }
+                var payload: String?
+                if kind == .substitution, m.numberOfRanges > 2,
+                   let g2 = Range(m.range(at: 2), in: source) {
+                    payload = String(source[g2])
+                }
+                raws.append(RawMatch(kind: kind, range: r, text: String(source[g1]), payload: payload))
+            }
+        }
+        raws.sort { $0.range.lowerBound < $1.range.lowerBound }
+
+        var result: [Annotation] = []
+        var lastEnd = source.startIndex
+        var i = 0
+        while i < raws.count {
+            let cur = raws[i]
+            // 跳过与已接受标注重叠的匹配（如删除标记内部嵌着评论语法）
+            if cur.range.lowerBound < lastEnd { i += 1; continue }
+            // {==X==}{>>C<<} 合并为一条评论标注
+            if cur.kind == .highlight, i + 1 < raws.count {
+                let next = raws[i + 1]
+                if next.kind == .comment, next.range.lowerBound == cur.range.upperBound {
+                    let merged = cur.range.lowerBound..<next.range.upperBound
+                    result.append(Annotation(
+                        kind: .comment, text: cur.text, payload: next.text,
+                        line: lineNumber(of: cur.range.lowerBound, in: source), range: merged
+                    ))
+                    lastEnd = merged.upperBound
+                    i += 2
+                    continue
+                }
+            }
+            result.append(Annotation(
+                kind: cur.kind, text: cur.text, payload: cur.payload,
+                line: lineNumber(of: cur.range.lowerBound, in: source), range: cur.range
+            ))
+            lastEnd = cur.range.upperBound
+            i += 1
+        }
+        return result
+    }
+
+    private static func lineNumber(of index: String.Index, in source: String) -> Int {
+        source[source.startIndex..<index].reduce(into: 1) { if $1 == "\n" { $0 += 1 } }
+    }
+
+    // MARK: - 片段提取
+
+    /// 围绕标注提取的可读片段（用于「只复制改动部分」给 AI）。
+    public struct Fragment: Equatable, Sendable {
+        /// 标注位置之前最近的 ATX 标题行（如 "## 第三章"），无则 nil
+        public let heading: String?
+        /// 片段文本（含标注标记；截断处带省略号）
+        public let text: String
+        /// 片段在源码中的起始偏移（用于排序）
+        public let position: Int
+    }
+
+    /// 提取标注所在片段：默认整段；段落超 `maxLength` 时以标注为中心逐句扩展；
+    /// 核心句仍超限时按字符截断（标注本身始终完整保留）。同段多条标注合并为一个片段。
+    public static func fragments(
+        for annotations: [Annotation],
+        in source: String,
+        maxLength: Int = 400
+    ) -> [Fragment] {
+        var groups: [(paragraph: Range<String.Index>, anns: [Annotation])] = []
+        for ann in annotations.sorted(by: { $0.range.lowerBound < $1.range.lowerBound }) {
+            let para = paragraphRange(around: ann.range, in: source)
+            if let last = groups.last, last.paragraph == para {
+                groups[groups.count - 1].anns.append(ann)
+            } else {
+                groups.append((para, [ann]))
+            }
+        }
+
+        var result: [Fragment] = []
+        for group in groups {
+            let heading = nearestHeading(before: group.paragraph.lowerBound, in: source)
+            let paragraph = source[group.paragraph]
+            if paragraph.count <= maxLength {
+                result.append(Fragment(
+                    heading: heading,
+                    text: String(paragraph).trimmingCharacters(in: .whitespacesAndNewlines),
+                    position: source.distance(from: source.startIndex, to: group.paragraph.lowerBound)
+                ))
+            } else {
+                // 段落超限：每条标注单独按句/字提取
+                for ann in group.anns {
+                    let text = clippedFragment(for: ann, paragraph: group.paragraph, in: source, maxLength: maxLength)
+                    result.append(Fragment(
+                        heading: heading,
+                        text: text,
+                        position: source.distance(from: source.startIndex, to: ann.range.lowerBound)
+                    ))
+                }
+            }
+        }
+        return result
+    }
+
+    /// 拼接片段为最终导出文本：片段之间用 `[...]` 标示省略，标题线索仅在变化时输出。
+    public static func exportFragments(_ fragments: [Fragment], intro: String? = nil) -> String {
+        var blocks: [String] = []
+        var lastHeading: String?
+        for frag in fragments.sorted(by: { $0.position < $1.position }) {
+            var block = ""
+            if let h = frag.heading, h != lastHeading {
+                block += h + "\n\n"
+                lastHeading = h
+            }
+            block += frag.text
+            blocks.append(block)
+        }
+        let body = blocks.joined(separator: "\n\n[...]\n\n")
+        if let intro, !intro.isEmpty {
+            return intro + "\n\n" + body + "\n"
+        }
+        return body + "\n"
+    }
+
+    /// 标注所在段落范围（以空行为界）。
+    private static func paragraphRange(around range: Range<String.Index>, in source: String) -> Range<String.Index> {
+        var start = source.startIndex
+        if let r = source.range(of: "\n\n", options: .backwards, range: source.startIndex..<range.lowerBound) {
+            start = r.upperBound
+        }
+        var end = source.endIndex
+        if let r = source.range(of: "\n\n", range: range.upperBound..<source.endIndex) {
+            end = r.lowerBound
+        }
+        return start..<end
+    }
+
+    /// `index` 之前最近的 ATX 标题行（如 "## 章节"）。
+    private static func nearestHeading(before index: String.Index, in source: String) -> String? {
+        var result: String?
+        for lineSub in source[source.startIndex..<index].split(separator: "\n", omittingEmptySubsequences: true) {
+            let trimmed = lineSub.drop(while: { $0 == " " })
+            guard trimmed.first == "#" else { continue }
+            let hashes = trimmed.prefix(while: { $0 == "#" })
+            if hashes.count <= 6, trimmed.dropFirst(hashes.count).first == " " {
+                result = String(trimmed)
+            }
+        }
+        return result
+    }
+
+    /// 句子级/字符级降级提取：以标注为中心，先取核心句，再逐句向两侧扩展；
+    /// 核心句仍超限时按字符截断。截断处补省略号。
+    private static func clippedFragment(
+        for ann: Annotation,
+        paragraph: Range<String.Index>,
+        in source: String,
+        maxLength: Int
+    ) -> String {
+        let enders: Set<Character> = ["。", "！", "？", "；", "!", "?", ";", "\n", "."]
+
+        // 核心句边界：从标注两端向外扫到最近的句末符
+        var coreStart = paragraph.lowerBound
+        var idx = ann.range.lowerBound
+        while idx > paragraph.lowerBound {
+            let prev = source.index(before: idx)
+            if enders.contains(source[prev]) { coreStart = idx; break }
+            idx = prev
+        }
+        var coreEnd = paragraph.upperBound
+        idx = ann.range.upperBound
+        while idx < paragraph.upperBound {
+            if enders.contains(source[idx]) { coreEnd = source.index(after: idx); break }
+            idx = source.index(after: idx)
+        }
+
+        var fragStart = coreStart
+        var fragEnd = coreEnd
+        let coreLength = source.distance(from: coreStart, to: coreEnd)
+
+        if coreLength > maxLength {
+            // 核心句过长：以标注为中心按字符截断（标注本身完整保留）
+            let annLength = source.distance(from: ann.range.lowerBound, to: ann.range.upperBound)
+            let budget = max(0, maxLength - annLength) / 2
+            fragStart = source.index(ann.range.lowerBound, offsetBy: -budget, limitedBy: paragraph.lowerBound) ?? paragraph.lowerBound
+            fragEnd = source.index(ann.range.upperBound, offsetBy: budget, limitedBy: paragraph.upperBound) ?? paragraph.upperBound
+        } else {
+            // 逐句向两侧交替扩展，直到接近上限
+            var length = coreLength
+            var canPrev = fragStart > paragraph.lowerBound
+            var canNext = fragEnd < paragraph.upperBound
+            while (canPrev || canNext) && length < maxLength {
+                if canPrev {
+                    // 上一句起点：跳过紧邻的句末符，再扫到更前一个句末符之后
+                    var s = source.index(before: fragStart)
+                    while s > paragraph.lowerBound, enders.contains(source[s]) {
+                        s = source.index(before: s)
+                    }
+                    var newStart = paragraph.lowerBound
+                    var j = s
+                    while j > paragraph.lowerBound {
+                        let prev = source.index(before: j)
+                        if enders.contains(source[prev]) { newStart = j; break }
+                        j = prev
+                    }
+                    let grow = source.distance(from: newStart, to: fragStart)
+                    if length + grow <= maxLength {
+                        fragStart = newStart
+                        length += grow
+                        canPrev = fragStart > paragraph.lowerBound
+                    } else {
+                        canPrev = false
+                    }
+                }
+                if canNext, length < maxLength {
+                    var newEnd = paragraph.upperBound
+                    var j = fragEnd
+                    while j < paragraph.upperBound {
+                        if enders.contains(source[j]) { newEnd = source.index(after: j); break }
+                        j = source.index(after: j)
+                    }
+                    let grow = source.distance(from: fragEnd, to: newEnd)
+                    if grow > 0, length + grow <= maxLength {
+                        fragEnd = newEnd
+                        length += grow
+                        canNext = fragEnd < paragraph.upperBound
+                    } else {
+                        canNext = false
+                    }
+                }
+            }
+        }
+
+        var text = String(source[fragStart..<fragEnd]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if fragStart > paragraph.lowerBound { text = "……" + text }
+        if fragEnd < paragraph.upperBound { text += "……" }
+        return text
+    }
+
     // MARK: - 导出给 AI
 
-    /// 默认引导提示词：解释 CriticMarkup 语法并要求 AI 据此修订后返回。
+    /// 默认引导提示词（兜底，正常路径使用设置中的可自定义模板）：
+    /// 说明内容包含 CriticMarkup 标注及各标记的含义。
     public static let defaultAIPrompt = """
-    下面是一份带有 CriticMarkup 审阅标注的 Markdown 文档。请理解我的标注并据此修订，然后返回修订后的完整 Markdown（去除标注标记）。
-
-    CriticMarkup 语法说明：
-    - {++ 新增内容 ++}        表示需要新增
-    - {-- 删除内容 --}        表示需要删除
-    - {~~ 旧内容 ~> 新内容 ~~} 表示需要替换
-    - {>> 评论 <<}            表示我的评论/疑问，请据此调整
-    - {== 高亮内容 ==}        表示我重点关注的部分
-
-    请逐条落实上述标注，并在必要处说明你的修改理由。
+    下面的内容中包含使用 CriticMarkup 语法的审阅标注，标记含义如下：
+    - {++ 新增内容 ++}        建议新增
+    - {-- 删除内容 --}        建议删除
+    - {~~ 旧内容 ~> 新内容 ~~} 建议替换为新内容
+    - {>> 评论 <<}            我的评论/疑问
+    - {== 高亮内容 ==}        我重点关注的部分
 
     ---
+
+    {{MarkMark:content}}
     """
 
-    /// 生成可直接粘贴给 AI 的内容：引导提示词 + 带标注的源码。
+    /// 提示词模板中的正文占位符（带 MarkMark 前缀避免与正文内容冲突）
+    public static let contentPlaceholder = "{{MarkMark:content}}"
+
+    /// 生成可直接粘贴给 AI 的内容。
+    /// 模板含 `{{MarkMark:content}}` 占位符时替换为正文；否则模板在前、正文在后。
     public static func exportForAI(_ markedSource: String, prompt: String? = nil) -> String {
         let header = prompt ?? defaultAIPrompt
+        if header.contains(contentPlaceholder) {
+            return header.replacingOccurrences(of: contentPlaceholder, with: markedSource)
+        }
         return header + "\n\n" + markedSource + "\n"
     }
 

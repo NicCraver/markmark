@@ -425,6 +425,7 @@ private struct FileOpenModifier: ViewModifier {
     let documentViewModel: DocumentViewModel
     let fileTreeViewModel: FileTreeViewModel
     let settings: SettingsModel
+    @Environment(\.language) private var language
 
     func body(content: Content) -> some View {
         content
@@ -470,24 +471,29 @@ private struct FileOpenModifier: ViewModifier {
                     // 不需要显式调用 loadFile — selectedFileURL 变化会触发 SelectionChangeModifier 统一加载
                 }
             }
-            .onActiveReceive(NotificationCenter.default.publisher(for: .newFile)) { _ in
-                if documentViewModel.isUntitled && documentViewModel.isDirty {
-                    handleUnsavedChangesBeforeAction { proceed in
-                        guard proceed else { return }
-                        let result = documentViewModel.createUntitledFile()
-                        guard result != nil else { return }
-                        fileTreeViewModel.selectedFileURL = nil
-                        appViewModel.selectedFile = nil
-                        appViewModel.hasUnsavedUntitled = true
-                        appViewModel.untitledFileName = documentViewModel.fileName
-                    }
-                } else {
-                    let result = documentViewModel.createUntitledFile()
+            .onActiveReceive(NotificationCenter.default.publisher(for: .newFromClipboard)) { _ in
+                // 从剪贴板新建标注：将剪贴板文本写入临时文件并以渲染模式打开
+                let text = NSPasteboard.general.string(forType: .string) ?? ""
+                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    NSSound.beep()
+                    return
+                }
+                let createScratch = {
+                    let name = L10n.tr(.clipboardScratchName, language: language) + ".md"
+                    let result = documentViewModel.createScratchFile(content: text, fileName: name)
                     guard result != nil else { return }
                     fileTreeViewModel.selectedFileURL = nil
                     appViewModel.selectedFile = nil
                     appViewModel.hasUnsavedUntitled = true
                     appViewModel.untitledFileName = documentViewModel.fileName
+                }
+                if documentViewModel.isUntitled && documentViewModel.isDirty {
+                    handleUnsavedChangesBeforeAction { proceed in
+                        guard proceed else { return }
+                        createScratch()
+                    }
+                } else {
+                    createScratch()
                 }
             }
             .onActiveReceive(NotificationCenter.default.publisher(for: .saveFile)) { _ in

@@ -41,16 +41,16 @@ struct SidebarView: View {
                 .help(L10n.tr(.titleBarOpen, language: language))
                 .padding(.leading, 4)
 
-                // 新建文件按钮
+                // 从剪贴板新建标注
                 Button {
-                    NotificationCenter.default.post(name: .newFile, object: nil)
+                    NotificationCenter.default.post(name: .newFromClipboard, object: nil)
                 } label: {
-                    Image(systemName: "doc.badge.plus")
+                    Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 14))
                         .foregroundStyle(themeColors.fgSecondary)
                 }
                 .buttonStyle(.plain)
-                .help(L10n.tr(.titleBarNewFile, language: language))
+                .help(L10n.tr(.newFromClipboard, language: language))
                 .padding(.leading, 4)
 
                 Spacer()

@@ -60,8 +60,13 @@ struct DetailView: View {
     /// 导出 / CriticMarkup 复用的 WKWebView 句柄
     @State private var webViewHandle = WebViewHandle()
 
-    /// 清除标注确认弹窗
-    @State private var showClearAnnotationsAlert = false
+    /// 应用 / 放弃所有标注确认弹窗
+    @State private var showApplyAnnotationsAlert = false
+    @State private var showDiscardAnnotationsAlert = false
+
+    /// 「已复制」轻提示
+    @State private var copiedToastVisible = false
+    @State private var copiedToastGeneration = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,6 +81,20 @@ struct DetailView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(themeColors.accent, lineWidth: 2)
                             .padding(4)
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    if copiedToastVisible {
+                        Text(L10n.tr(.copiedToast, language: language))
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(themeColors.ink)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(themeColors.surface))
+                            .overlay(Capsule().strokeBorder(themeColors.border))
+                            .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+                            .padding(.bottom, 20)
+                            .transition(.opacity)
                     }
                 }
         }
@@ -105,16 +124,27 @@ struct DetailView: View {
         .onActiveReceive(NotificationCenter.default.publisher(for: .copyForAI)) { _ in
             copyForAI()
         }
-        .onActiveReceive(NotificationCenter.default.publisher(for: .clearAnnotations)) { _ in
-            if documentHasAnnotations { showClearAnnotationsAlert = true }
+        .onActiveReceive(NotificationCenter.default.publisher(for: .applyAllAnnotations)) { _ in
+            if documentHasAnnotations { showApplyAnnotationsAlert = true }
         }
-        .alert(L10n.tr(.clearAnnotationsConfirmTitle, language: language), isPresented: $showClearAnnotationsAlert) {
-            Button(L10n.tr(.clearAnnotationsMenu, language: language), role: .destructive) {
-                clearAnnotations()
+        .onActiveReceive(NotificationCenter.default.publisher(for: .discardAllAnnotations)) { _ in
+            if documentHasAnnotations { showDiscardAnnotationsAlert = true }
+        }
+        .alert(L10n.tr(.applyAnnotationsConfirmTitle, language: language), isPresented: $showApplyAnnotationsAlert) {
+            Button(L10n.tr(.applyAnnotationsMenu, language: language), role: .destructive) {
+                documentViewModel.applyAllAnnotations()
             }
             Button(L10n.tr(.unsavedCancel, language: language), role: .cancel) {}
         } message: {
-            Text(L10n.tr(.clearAnnotationsConfirmMessage, language: language))
+            Text(L10n.tr(.applyAnnotationsConfirmMessage, language: language))
+        }
+        .alert(L10n.tr(.discardAnnotationsConfirmTitle, language: language), isPresented: $showDiscardAnnotationsAlert) {
+            Button(L10n.tr(.discardAnnotationsMenu, language: language), role: .destructive) {
+                documentViewModel.discardAllAnnotations()
+            }
+            Button(L10n.tr(.unsavedCancel, language: language), role: .cancel) {}
+        } message: {
+            Text(L10n.tr(.discardAnnotationsConfirmMessage, language: language))
         }
         // 拖拽视觉反馈：由 AppKit FileDropOverlayView 发送
         .onReceive(NotificationCenter.default.publisher(for: .dragHoverChanged)) { notification in
@@ -171,16 +201,16 @@ struct DetailView: View {
                 .help(L10n.tr(.titleBarOpen, language: language))
                 .padding(.leading, 4)
 
-                // 新建文件按钮（始终可用，无需打开目录）
+                // 从剪贴板新建标注（始终可用，无需打开目录）
                 Button {
-                    NotificationCenter.default.post(name: .newFile, object: nil)
+                    NotificationCenter.default.post(name: .newFromClipboard, object: nil)
                 } label: {
-                    Image(systemName: "doc.badge.plus")
+                    Image(systemName: "doc.on.clipboard")
                         .font(.system(size: 14))
                         .foregroundStyle(themeColors.fgSecondary)
                 }
                 .buttonStyle(.plain)
-                .help(L10n.tr(.titleBarNewFile, language: language))
+                .help(L10n.tr(.newFromClipboard, language: language))
                 .padding(.leading, 4)
             }
 
@@ -220,14 +250,14 @@ struct DetailView: View {
 
             // 操作按钮组与大纲图标下对齐，横向间隔一致
             HStack(alignment: .bottom, spacing: 8) {
-                // 刷新按钮（文件被外部修改时显示，在保存按钮左侧）
-                if documentViewModel.hasDocument && documentViewModel.isFileModifiedExternally {
+                // 刷新按钮（常驻；文件被外部修改时以强调色提示）
+                if documentViewModel.hasDocument {
                     Button {
                         handleReloadButtonTapped()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 14))
-                            .foregroundStyle(themeColors.accent)
+                            .foregroundStyle(documentViewModel.isFileModifiedExternally ? themeColors.accent : themeColors.fgMuted)
                     }
                     .buttonStyle(.plain)
                     .help(L10n.tr(.titleBarReload, language: language))
@@ -256,31 +286,50 @@ struct DetailView: View {
                     .buttonStyle(.plain)
                     .help(L10n.tr(.titleBarExportPDF, language: language))
 
-                    // 清除全部 CriticMarkup 标注（仅当存在标注时显示）
+                    // 应用 / 放弃所有标注（仅当存在标注时显示）
                     if documentHasAnnotations {
-                        Button {
-                            showClearAnnotationsAlert = true
+                        Menu {
+                            Button {
+                                showApplyAnnotationsAlert = true
+                            } label: {
+                                Label(L10n.tr(.applyAnnotationsMenu, language: language), systemImage: "checkmark.circle")
+                            }
+                            Button(role: .destructive) {
+                                showDiscardAnnotationsAlert = true
+                            } label: {
+                                Label(L10n.tr(.discardAnnotationsMenu, language: language), systemImage: "eraser")
+                            }
                         } label: {
-                            Image(systemName: "eraser")
+                            Image(systemName: "checkmark.circle.badge.xmark")
                                 .font(.system(size: 14))
                                 .foregroundStyle(themeColors.fgMuted)
                         }
-                        .buttonStyle(.plain)
-                        .help(L10n.tr(.titleBarClearAnnotations, language: language))
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                        .help(L10n.tr(.titleBarAnnotationActions, language: language))
                     }
 
                     // 复制：macOS 标准下拉按钮（图标 + 内联 chevron），单击即展开菜单。
-                    // 菜单首项为默认动作「复制 CriticMarkup」，次项「复制给 AI（含说明）」。
                     Menu {
+                        Button {
+                            copyForAI()
+                        } label: {
+                            Label(L10n.tr(.copyForAIMenu, language: language), systemImage: "sparkles")
+                        }
+                        Button {
+                            copySessionFragments()
+                        } label: {
+                            Label(L10n.tr(.copyFragmentsMenu, language: language), systemImage: "text.line.first.and.arrowtriangle.forward")
+                        }
                         Button {
                             copyCritic()
                         } label: {
                             Label(L10n.tr(.copyCriticMenu, language: language), systemImage: "doc.on.doc")
                         }
                         Button {
-                            copyForAI()
+                            copyPrompt()
                         } label: {
-                            Label(L10n.tr(.copyForAIMenu, language: language), systemImage: "sparkles")
+                            Label(L10n.tr(.copyPromptMenu, language: language), systemImage: "text.quote")
                         }
                     } label: {
                         Image(systemName: "doc.on.doc")
@@ -290,6 +339,18 @@ struct DetailView: View {
                     .menuStyle(.borderlessButton)
                     .fixedSize()
                     .help(L10n.tr(.titleBarCopyMenu, language: language))
+
+                    // 标注列表面板切换
+                    Button {
+                        appViewModel.toggleAnnotationPanel()
+                    } label: {
+                        Image(systemName: "highlighter")
+                            .font(.system(size: 14))
+                            .foregroundStyle(annotationPanelButtonColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!documentViewModel.hasDocument)
+                    .help(L10n.tr(.titleBarAnnotationPanel, language: language))
                 }
 
                 // 大纲切换按钮（始终显示在 titlebar 最右侧）
@@ -365,11 +426,16 @@ struct DetailView: View {
             documentContentView
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 右侧：大纲侧边栏
+            // 右侧：大纲 / 标注列表侧边栏（互斥，共用宽度与拖拽手柄）
             if appViewModel.isOutlineVisible {
                 OutlineResizeHandle(appViewModel: appViewModel)
 
                 outlineSidebar
+                    .frame(width: appViewModel.outlineWidth)
+            } else if appViewModel.isAnnotationPanelVisible {
+                OutlineResizeHandle(appViewModel: appViewModel)
+
+                AnnotationPanelView(documentViewModel: documentViewModel, onCopied: { flashCopiedToast() })
                     .frame(width: appViewModel.outlineWidth)
             }
         }
@@ -412,10 +478,11 @@ struct DetailView: View {
         ]
     }
 
-    /// 复制带标注的文档（含引导提示词）到剪贴板，供粘贴给 AI
+    /// 复制带标注的文档（含引导提示词模板）到剪贴板，供粘贴给 AI
     private func copyForAI() {
         guard documentViewModel.hasDocument else { return }
-        writeToPasteboard(CriticMarkup.exportForAI(documentViewModel.content))
+        let prompt = settings.resolvedAIPrompt(language: language)
+        writeToPasteboard(CriticMarkup.exportForAI(documentViewModel.content, prompt: prompt))
     }
 
     /// 复制带 CriticMarkup 标注的原文（不含 AI 引导说明）
@@ -424,16 +491,46 @@ struct DetailView: View {
         writeToPasteboard(documentViewModel.content)
     }
 
+    /// 复制本次会话新增的标注片段（含上下文，纯片段不带提示头）；
+    /// 没有本次新增时打开标注列表面板，让用户从历史标注中自选
+    private func copySessionFragments() {
+        guard documentViewModel.hasDocument else { return }
+        let annotations = documentViewModel.sessionMatchedAnnotations()
+        guard !annotations.isEmpty else {
+            if !appViewModel.isAnnotationPanelVisible {
+                appViewModel.toggleAnnotationPanel()
+            }
+            return
+        }
+        let fragments = CriticMarkup.fragments(for: annotations, in: documentViewModel.content)
+        writeToPasteboard(CriticMarkup.exportFragments(fragments))
+    }
+
+    /// 复制 AI 提示词模板本身（剥掉正文占位符）
+    private func copyPrompt() {
+        let prompt = settings.resolvedAIPrompt(language: language)
+            .replacingOccurrences(of: CriticMarkup.contentPlaceholder, with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        writeToPasteboard(prompt)
+    }
+
     private func writeToPasteboard(_ text: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        flashCopiedToast()
     }
 
-    /// 清除全部标注，恢复原文
-    private func clearAnnotations() {
-        guard documentViewModel.hasDocument else { return }
-        documentViewModel.content = CriticMarkup.rejecting(documentViewModel.content)
+    /// 复制成功的轻提示（1.2 秒后自动消失；连续复制时顺延）
+    private func flashCopiedToast() {
+        copiedToastGeneration += 1
+        let generation = copiedToastGeneration
+        withAnimation(.easeOut(duration: 0.15)) { copiedToastVisible = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if generation == copiedToastGeneration {
+                withAnimation(.easeIn(duration: 0.25)) { copiedToastVisible = false }
+            }
+        }
     }
 
     private func exportPDF() {
@@ -497,6 +594,10 @@ struct DetailView: View {
         } else {
             return themeColors.fgMuted
         }
+    }
+
+    private var annotationPanelButtonColor: Color {
+        appViewModel.isAnnotationPanelVisible ? themeColors.accent : themeColors.fgMuted
     }
 
     private var outlineSidebar: some View {

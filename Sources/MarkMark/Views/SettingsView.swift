@@ -166,12 +166,50 @@ struct GeneralSettingsView: View {
                     Text(commandLineErrorMessage)
                 }
             }
+
+            SettingsDivider()
+
+            // AI 提示词模板
+            SettingsSection(
+                title: L10n.tr(.settingsAIPromptTitle, language: language),
+                description: L10n.tr(.settingsAIPromptDescription, language: language)
+            ) {
+                VStack(alignment: .leading, spacing: 8) {
+                    TextEditor(text: aiPromptBinding)
+                        .font(.system(size: 12))
+                        .scrollContentBackground(.hidden)
+                        .padding(6)
+                        .frame(height: 160)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(Color.secondary.opacity(0.3))
+                        )
+
+                    if !settings.aiPromptTemplate.isEmpty {
+                        Button(L10n.tr(.settingsAIPromptReset, language: language)) {
+                            settings.aiPromptTemplate = ""
+                        }
+                    }
+                }
+            }
         }
         .padding(24)
         .onAppear {
             settings.refreshDefaultOpenerStatus()
             settings.enableCommandLine = commandLineService.isInstalled
         }
+    }
+
+    /// 模板编辑绑定：未自定义时显示当前语言的默认模板；
+    /// 编辑结果与默认一致时归零为「未自定义」，使其继续跟随界面语言。
+    private var aiPromptBinding: Binding<String> {
+        Binding(
+            get: { settings.resolvedAIPrompt(language: language) },
+            set: { newValue in
+                let defaultTemplate = L10n.tr(.aiPromptDefaultTemplate, language: language)
+                settings.aiPromptTemplate = (newValue == defaultTemplate) ? "" : newValue
+            }
+        )
     }
 
     private func toggleCommandLine(_ enable: Bool) {

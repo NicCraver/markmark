@@ -64,6 +64,7 @@ final class SettingsModel {
         static let skippedVersion       = "com.markdownreader.skippedVersion"
         static let lastUpdateCheckTime  = "com.markdownreader.lastUpdateCheckTime"
         static let enableQuickLookPreview = "com.markdownreader.enableQuickLookPreview"
+        static let aiPromptTemplate     = "com.markdownreader.aiPromptTemplate"
     }
 
     private let defaults = UserDefaults.standard
@@ -119,6 +120,19 @@ final class SettingsModel {
     /// 启用 Quick Look 预览（在 Finder 中按空格键预览 Markdown 文件）
     var enableQuickLookPreview: Bool {
         didSet { defaults.set(enableQuickLookPreview, forKey: Keys.enableQuickLookPreview) }
+    }
+
+    // MARK: - AI 提示词模板
+
+    /// 「复制给 AI」的引导提示词模板（用户自定义覆盖；空字符串表示使用默认模板）
+    var aiPromptTemplate: String {
+        didSet { defaults.set(aiPromptTemplate, forKey: Keys.aiPromptTemplate) }
+    }
+
+    /// 解析后的提示词模板：用户未自定义时按界面语言取默认模板
+    func resolvedAIPrompt(language: Language) -> String {
+        let custom = aiPromptTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
+        return custom.isEmpty ? L10n.tr(.aiPromptDefaultTemplate, language: language) : aiPromptTemplate
     }
 
     // MARK: - 自动更新
@@ -356,6 +370,7 @@ final class SettingsModel {
             defaults.set(true, forKey: Keys.enableQuickLookPreview)
         }
         self.enableQuickLookPreview = defaults.bool(forKey: Keys.enableQuickLookPreview)
+        self.aiPromptTemplate = defaults.string(forKey: Keys.aiPromptTemplate) ?? ""
         self.skippedVersion = defaults.string(forKey: Keys.skippedVersion)
         self.lastUpdateCheckTime = defaults.object(forKey: Keys.lastUpdateCheckTime) as? Date
         self.appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: Keys.appearanceMode) ?? "") ?? .system

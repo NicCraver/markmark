@@ -117,10 +117,10 @@ struct MarkdownReaderApp: App {
                 }
             }
 
-            // 文件菜单：新建 + 打开 + 保存 + 打开最近
+            // 文件菜单：从剪贴板新建标注 + 打开 + 保存 + 打开最近
             CommandGroup(replacing: .newItem) {
-                Button(L10n.tr(.menuNewFile, language: language)) {
-                    NotificationCenter.default.post(name: .newFile, object: nil)
+                Button(L10n.tr(.newFromClipboard, language: language)) {
+                    NotificationCenter.default.post(name: .newFromClipboard, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: .command)
 
@@ -147,9 +147,12 @@ struct MarkdownReaderApp: App {
                 }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
 
-                // CriticMarkup：清除全部标注
-                Button(L10n.tr(.clearAnnotationsMenu, language: language)) {
-                    NotificationCenter.default.post(name: .clearAnnotations, object: nil)
+                // CriticMarkup：应用 / 放弃所有标注
+                Button(L10n.tr(.applyAnnotationsMenu, language: language)) {
+                    NotificationCenter.default.post(name: .applyAllAnnotations, object: nil)
+                }
+                Button(L10n.tr(.discardAnnotationsMenu, language: language)) {
+                    NotificationCenter.default.post(name: .discardAllAnnotations, object: nil)
                 }
 
                 // 打开最近子菜单
@@ -199,7 +202,7 @@ extension Notification.Name {
     static let openDirectory = Notification.Name("com.markdownreader.openDirectory")
     static let openFile = Notification.Name("com.markdownreader.openFile")
     static let toggleSettings = Notification.Name("com.markdownreader.toggleSettings")
-    static let newFile = Notification.Name("com.markdownreader.newFile")
+    static let newFromClipboard = Notification.Name("com.markdownreader.newFromClipboard")
     static let saveFile = Notification.Name("com.markdownreader.saveFile")
     static let saveAsFile = Notification.Name("com.markdownreader.saveAsFile")
     static let reloadFile = Notification.Name("com.markdownreader.reloadFile")
@@ -213,7 +216,8 @@ extension Notification.Name {
     static let findAndReplace = Notification.Name("com.markdownreader.findAndReplace")
     static let exportPDF = Notification.Name("com.markdownreader.exportPDF")
     static let copyForAI = Notification.Name("com.markdownreader.copyForAI")
-    static let clearAnnotations = Notification.Name("com.markdownreader.clearAnnotations")
+    static let applyAllAnnotations = Notification.Name("com.markdownreader.applyAllAnnotations")
+    static let discardAllAnnotations = Notification.Name("com.markdownreader.discardAllAnnotations")
     static let dragHoverChanged = Notification.Name("com.markdownreader.dragHoverChanged")
     static let unsupportedFileTypeDropped = Notification.Name("com.markdownreader.unsupportedFileTypeDropped")
 }

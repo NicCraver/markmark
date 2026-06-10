@@ -614,19 +614,40 @@
       }
     },
 
-    // 用 CSS Custom Highlight API 给「正在标注」的选区上一层持久高亮，
-    // 这样即使原生选区因为点击工具条/聚焦输入框而消失，用户也能看到刚选的位置。
+    // 用 CSS Custom Highlight API 给「正在标注」的选区上一层持久高亮。
+    // 仅在进入评论/替换输入态（原生选区即将因聚焦输入框而消失）时设置；
+    // 普通选词阶段原生选区本身可见，叠加高亮反而会触发 WebKit 的残留重绘 bug。
     _setPendingHighlight(range) {
       try {
         if (!window.CSS || !CSS.highlights || typeof Highlight === 'undefined' || !range) return;
         MR._clearPendingHighlight();
-        const hl = new Highlight(range.cloneRange());
-        CSS.highlights.set('critic-pending', hl);
+        const cloned = range.cloneRange();
+        MR._pendingHighlightRange = cloned;
+        CSS.highlights.set('critic-pending', new Highlight(cloned));
       } catch (e) { /* no-op */ }
     },
 
     _clearPendingHighlight() {
-      try { if (window.CSS && CSS.highlights) CSS.highlights.delete('critic-pending'); } catch (e) { /* no-op */ }
+      try {
+        if (window.CSS && CSS.highlights) {
+          // WebKit 偶发 bug：直接从注册表 delete 后，选区首尾字符的高亮不重绘
+          // （切换窗口焦点强制全量重绘才消失）。先 clear() 范围再 delete，
+          // 并轻触一个 paint-only 属性强制该块重绘。
+          const hl = CSS.highlights.get('critic-pending');
+          if (hl && typeof hl.clear === 'function') hl.clear();
+          CSS.highlights.delete('critic-pending');
+        }
+        const r = MR._pendingHighlightRange;
+        MR._pendingHighlightRange = null;
+        if (r) {
+          let el = r.commonAncestorContainer;
+          if (el && el.nodeType === 3) el = el.parentElement;
+          if (el && el.style) {
+            el.style.webkitTextFillColor = 'currentcolor';
+            requestAnimationFrame(() => { el.style.webkitTextFillColor = ''; });
+          }
+        }
+      } catch (e) { /* no-op */ }
     },
 
     _postCriticAction(op, text, line, payload) {
@@ -678,7 +699,6 @@
     _showCriticToolbar(range, text, line) {
       const bar = MR._ensureCriticToolbar();
       MR._criticPending = { text: text, line: line };
-      MR._setPendingHighlight(range);
       const L = MR.criticLabels;
       bar.innerHTML = '';
 
@@ -714,6 +734,8 @@
       const bar = document.getElementById('mr-critic-toolbar');
       if (!bar || !MR._criticPending) return;
       const L = MR.criticLabels;
+      // 输入框即将抢走焦点、原生选区会消失，此时才给选区上持久高亮
+      MR._setPendingHighlight(MR._criticRange);
       bar.classList.add('critic-input-mode');
       bar.innerHTML = '';
 

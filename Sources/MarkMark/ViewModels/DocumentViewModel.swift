@@ -73,6 +73,24 @@ final class DocumentViewModel {
         return false
     }
 
+    /// 本次会话内通过选词工具条新增的标注记录（按文件分桶；内存态，应用退出即清空）。
+    /// 仅作索引用途：复制片段时以当前文档实时解析为准，记录定位不到即视为失效。
+    struct SessionAnnotationRecord: Equatable {
+        let kind: CriticMarkup.Annotation.Kind
+        var text: String
+        var payload: String?
+        let addedAt: Date
+    }
+
+    /// 各文件的会话标注记录
+    private(set) var sessionAnnotations: [URL: [SessionAnnotationRecord]] = [:]
+
+    /// 当前文件的会话标注记录
+    var currentSessionAnnotations: [SessionAnnotationRecord] {
+        guard let url = currentFileURL else { return [] }
+        return sessionAnnotations[url] ?? []
+    }
+
     /// 当前文档的大纲项
     var outlineItems: [OutlineItem] = []
 
@@ -280,6 +298,7 @@ final class DocumentViewModel {
                 in: content, oldComment: action.text, newComment: action.payload ?? "", nearLine: action.line
             ) {
                 content = updated
+                updateSessionRecord(oldComment: action.text, newComment: action.payload ?? "")
                 return true
             }
             return false
@@ -288,6 +307,7 @@ final class DocumentViewModel {
                 in: content, comment: action.text, nearLine: action.line
             ) {
                 content = updated
+                removeSessionRecord(comment: action.text)
                 return true
             }
             return false
@@ -296,12 +316,13 @@ final class DocumentViewModel {
         }
 
         let op: CriticMarkup.Operation
+        let recordKind: CriticMarkup.Annotation.Kind
         switch action.op {
-        case "delete":    op = .delete
-        case "highlight": op = .highlight
-        case "comment":   op = .comment(action.payload ?? "")
-        case "replace":   op = .replace(action.payload ?? "")
-        case "insert":    op = .insert(action.payload ?? "")
+        case "delete":    op = .delete;                          recordKind = .deletion
+        case "highlight": op = .highlight;                       recordKind = .highlight
+        case "comment":   op = .comment(action.payload ?? "");   recordKind = .comment
+        case "replace":   op = .replace(action.payload ?? "");   recordKind = .substitution
+        case "insert":    op = .insert(action.payload ?? "");    recordKind = .addition
         default: return false
         }
         if let updated = CriticMarkup.apply(
@@ -311,9 +332,79 @@ final class DocumentViewModel {
             nearLine: action.line
         ) {
             content = updated
+            appendSessionRecord(kind: recordKind, action: action)
             return true
         }
         return false
+    }
+
+    /// 记录本次会话新增的标注。字段需与 `CriticMarkup.parseAnnotations` 的解析结果对齐，
+    /// 面板按 (kind, text, payload) 把记录匹配回当前文档。
+    private func appendSessionRecord(kind: CriticMarkup.Annotation.Kind, action: CriticActionPayload) {
+        guard let url = currentFileURL else { return }
+        let record: SessionAnnotationRecord
+        switch kind {
+        case .addition:
+            // {++新增++} 的解析 text 是新增内容（即 payload）
+            record = SessionAnnotationRecord(kind: kind, text: action.payload ?? "", payload: nil, addedAt: Date())
+        case .deletion, .highlight:
+            record = SessionAnnotationRecord(kind: kind, text: action.text, payload: nil, addedAt: Date())
+        case .comment, .substitution:
+            record = SessionAnnotationRecord(kind: kind, text: action.text, payload: action.payload ?? "", addedAt: Date())
+        }
+        sessionAnnotations[url, default: []].append(record)
+    }
+
+    /// 评论被编辑后同步会话记录（按旧评论内容匹配）
+    private func updateSessionRecord(oldComment: String, newComment: String) {
+        guard let url = currentFileURL, var records = sessionAnnotations[url] else { return }
+        if let idx = records.firstIndex(where: { $0.kind == .comment && $0.payload == oldComment }) {
+            records[idx].payload = newComment
+            sessionAnnotations[url] = records
+        }
+    }
+
+    /// 评论被删除后同步会话记录
+    private func removeSessionRecord(comment: String) {
+        guard let url = currentFileURL, var records = sessionAnnotations[url] else { return }
+        if let idx = records.firstIndex(where: { $0.kind == .comment && $0.payload == comment }) {
+            records.remove(at: idx)
+            sessionAnnotations[url] = records
+        }
+    }
+
+    /// 把本次会话的标注记录匹配回当前文档，返回仍存在的标注（按 kind/text/payload 配对）。
+    /// 用于「复制本次新增的标注片段」。
+    func sessionMatchedAnnotations() -> [CriticMarkup.Annotation] {
+        let annotations = CriticMarkup.parseAnnotations(in: content)
+        var consumed = Set<Int>()
+        var result: [CriticMarkup.Annotation] = []
+        for record in currentSessionAnnotations {
+            if let idx = annotations.indices.first(where: { i in
+                !consumed.contains(i)
+                    && annotations[i].kind == record.kind
+                    && annotations[i].text == record.text
+                    && (annotations[i].payload ?? "") == (record.payload ?? "")
+            }) {
+                consumed.insert(idx)
+                result.append(annotations[idx])
+            }
+        }
+        return result
+    }
+
+    /// 应用所有标注：删除/替换生效、新增保留、高亮评论移除。同时清空该文件的会话记录。
+    func applyAllAnnotations() {
+        guard hasDocument else { return }
+        content = CriticMarkup.accepting(content)
+        if let url = currentFileURL { sessionAnnotations[url] = [] }
+    }
+
+    /// 放弃所有标注：还原标注前的原文。同时清空该文件的会话记录。
+    func discardAllAnnotations() {
+        guard hasDocument else { return }
+        content = CriticMarkup.rejecting(content)
+        if let url = currentFileURL { sessionAnnotations[url] = [] }
     }
 
     /// 清除滚动请求（滚动完成后调用）
@@ -321,38 +412,47 @@ final class DocumentViewModel {
         scrollToLineRequest = nil
     }
 
+    /// 从剪贴板等来源创建临时「便笺」文件：写入内容并以渲染模式打开，直接进入标注流程。
+    /// 复用 isUntitled 机制：切换到其他文件时清理临时文件，Cmd+S 走另存为。
     @discardableResult
-    func createUntitledFile() -> URL? {
-        if isUntitled { return nil }
-
-        // 切换前保存当前文件的编辑内容和显示模式
-        if let currentURL = currentFileURL, hasDocument {
+    func createScratchFile(content text: String, fileName name: String) -> URL? {
+        // 切换前保存当前（真实）文件的编辑内容和显示模式
+        if let currentURL = currentFileURL, hasDocument, !isUntitled {
             contentCache[currentURL] = content
             displayModeCache[currentURL] = displayMode
         }
 
-        let tempDir = Self.untitledDirectory
-        let untitledName = "Untitled.md"
-        let fileURL = tempDir.appendingPathComponent(untitledName)
+        // 已有未保存的临时文件：清理旧文件后重建
+        if isUntitled, let old = currentFileURL {
+            try? FileManager.default.removeItem(at: old)
+            contentCache.removeValue(forKey: old)
+            diskContentSnapshot.removeValue(forKey: old)
+        }
 
-        // 创建空文件
-        FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+        let fileURL = Self.untitledDirectory.appendingPathComponent(name)
+        do {
+            try text.write(to: fileURL, atomically: true, encoding: .utf8)
+        } catch {
+            fileError = .permissionDenied(fileURL)
+            return nil
+        }
 
         // 使用 isLoading 阻止 content 的 didSet 触发 markDirtyIfNeeded()
         // 确保所有属性一次性设置完毕后再通知 SwiftUI
         isLoading = true
 
         currentFileURL = fileURL
-        fileName = untitledName
+        fileName = name
         // 先设置快照，再设置 content，确保 markDirtyIfNeeded 即使被调用也能正确比较
-        diskContentSnapshot[fileURL] = ""
-        contentCache[fileURL] = ""
-        content = ""
-        outlineItems = []
+        diskContentSnapshot[fileURL] = text
+        contentCache[fileURL] = text
+        content = text
+        outlineItems = OutlineService.parse(text)
         isDirty = false
         isUntitled = true
+        isPlainTextMode = false
         fileError = nil
-        displayMode = .raw  // 新建文件始终使用 Raw 模式，便于立即开始编辑
+        displayMode = .rendered  // 标注在渲染视图中进行
 
         isLoading = false
 
