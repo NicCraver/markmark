@@ -271,7 +271,7 @@ final class UpdateViewModel {
                 }
 
                 // 验证新 .app 包含可执行文件
-                let executableName = Bundle.main.infoDictionary?["CFBundleExecutable"] as? String ?? "MarkdownReader"
+                let executableName = Bundle.main.infoDictionary?["CFBundleExecutable"] as? String ?? "MarkMark"
                 let executablePath = appURL.appendingPathComponent("Contents/MacOS/\(executableName)")
                 guard FileManager.default.fileExists(atPath: executablePath.path) else {
                     throw UpdateError.installFailed("New .app is missing executable")
@@ -345,6 +345,8 @@ final class UpdateViewModel {
         let appPath = appURL.path
         let pid = ProcessInfo.processInfo.processIdentifier
         let workDirPath = tempWorkDir?.path ?? ""
+        // 可执行文件名（产品由 MarkdownReader 改名为 MarkMark；不可硬编码，否则验证恒失败 → 误回滚到旧版本）
+        let executableName = Bundle.main.infoDictionary?["CFBundleExecutable"] as? String ?? "MarkMark"
 
         // 验证新 .app 仍然存在
         guard FileManager.default.fileExists(atPath: newAppURL.path) else {
@@ -393,7 +395,7 @@ final class UpdateViewModel {
         /usr/bin/codesign --force --sign - "\(appPath)" 2>/dev/null
 
         # 验证新 app 可执行文件存在
-        if [ -x "\(appPath)/Contents/MacOS/MarkdownReader" ]; then
+        if [ -x "\(appPath)/Contents/MacOS/\(executableName)" ]; then
             # 清理备份和临时文件
             rm -rf "\(appPath)/Contents.old" 2>/dev/null
             \(workDirPath.isEmpty ? "" : "rm -rf \"\(workDirPath)\" 2>/dev/null")
