@@ -71,6 +71,11 @@ nav .links a{color:var(--ink-soft)}
 nav .links a:hover{color:var(--ink)}
 nav .links a.btn{color:var(--paper)}
 nav .links a.btn:hover{color:var(--paper)}
+/* language toggle */
+.lang-toggle{cursor:pointer;font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;
+  color:var(--ink-soft);border:1px solid var(--line-strong);border-radius:8px;padding:5px 10px;
+  background:transparent;transition:background .15s, color .15s, border-color .15s;user-select:none}
+.lang-toggle:hover{color:var(--ink);background:rgba(29,24,19,.05);border-color:var(--ink)}
 .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13.5px;font-weight:500;
   padding:10px 16px;border-radius:10px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
   transition:transform .15s ease, box-shadow .15s ease, background .15s}
@@ -218,7 +223,7 @@ footer a:hover{color:var(--red-ink)}
   .hero{grid-template-columns:1fr;gap:38px}
   .steps,.grid{grid-template-columns:1fr}
   .dive{grid-template-columns:1fr;gap:30px}
-  nav .links a:not(.btn){display:none}
+  nav .links a:not(.btn):not(.lang-toggle){display:none}
   .download{padding:42px 26px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -232,11 +237,12 @@ footer a:hover{color:var(--red-ink)}
   <div class="wrap">
     <a class="brand" href="#top"><img src="icon.png" alt="MarkMark"><span>MarkMark</span></a>
     <div class="links">
-      <a href="#workflow">流程</a>
-      <a href="#features">特性</a>
+      <a href="#workflow" data-i18n="nav.workflow">流程</a>
+      <a href="#features" data-i18n="nav.features">特性</a>
       <a href="#critic">CriticMarkup</a>
-      <a href="#changelog">更新日志</a>
-      <a class="btn" href="#download">下载</a>
+      <a href="#changelog" data-i18n="nav.changelog">更新日志</a>
+      <span class="lang-toggle" id="langToggle" role="button" tabindex="0">EN</span>
+      <a class="btn" href="#download" data-i18n="nav.download">下载</a>
     </div>
   </div>
 </nav>
@@ -245,59 +251,59 @@ footer a:hover{color:var(--red-ink)}
   <div class="wrap hero">
     <div>
       <span class="eyebrow">Native macOS · Markdown reader</span>
-      <h1>读 Markdown，<br><span class="pen">批注</span>它，<br>交给 AI。</h1>
-      <p class="lead">一个安静的阅读器。在渲染好的文档上直接圈改，再一键把带审阅标记的全文复制给 AI 修订。</p>
+      <h1 data-i18n="hero.h1">读 Markdown，<br><span class="pen">批注</span>它，<br>交给 AI。</h1>
+      <p class="lead" data-i18n="hero.lead">一个安静的阅读器。在渲染好的文档上直接圈改，再一键把带审阅标记的全文复制给 AI 修订。</p>
       <div class="cta">
-        <a class="btn red" href="#download">↓ 下载 macOS 版</a>
-        <a class="btn ghost" href="https://github.com/easychen/markmark" target="_blank" rel="noopener">在 GitHub 查看</a>
+        <a class="btn red" href="#download" data-i18n="hero.cta.download">↓ 下载 macOS 版</a>
+        <a class="btn ghost" href="https://github.com/easychen/markmark" target="_blank" rel="noopener" data-i18n="hero.cta.github">在 GitHub 查看</a>
       </div>
       <div class="meta">
-        <span><b>macOS 15+</b> · Intel &amp; Apple Silicon</span>
-        <span><b>免费</b> · 开源 MIT</span>
-        <span><b>Universal</b> · 约 9 MB</span>
+        <span data-i18n="hero.meta1"><b>macOS 15+</b> · Intel &amp; Apple Silicon</span>
+        <span data-i18n="hero.meta2"><b>免费</b> · 开源 MIT</span>
+        <span data-i18n="hero.meta3"><b>Universal</b> · 约 9 MB</span>
       </div>
     </div>
 
     <div class="shotwrap">
-      <img class="hero-shot" src="app-screenshot.png" alt="MarkMark 应用截图：在渲染好的文档上用 CriticMarkup 标注，并附评论气泡" loading="eager" width="2024" height="1424">
-      <span class="shot-tag">在渲染视图里选词即标 · 评论可查看/编辑/删除</span>
+      <img class="hero-shot" src="app-screenshot.png" alt="MarkMark" loading="eager" width="2024" height="1424">
+      <span class="shot-tag" data-i18n="hero.shottag">在渲染视图里选词即标 · 评论可查看/编辑/删除</span>
     </div>
   </div>
 </header>
 
 <div class="legend">
   <div class="wrap">
-    <span><span class="cm-ins">新增</span> &nbsp;<code>{++ ++}</code></span>
-    <span><span class="cm-del">删除</span> &nbsp;<code>{-- --}</code></span>
-    <span><span class="cm-del">旧</span><span class="cm-ins">新</span> 替换 &nbsp;<code>{~&gt; &nbsp;~~}</code></span>
-    <span><span class="cm-hi">高亮</span> &nbsp;<code>{== ==}</code></span>
-    <span>评论 <span class="cm-cm" title="评论">!</span> &nbsp;<code>{&gt;&gt; &lt;&lt;}</code></span>
+    <span data-i18n="legend.ins"><span class="cm-ins">新增</span> &nbsp;<code>{++ ++}</code></span>
+    <span data-i18n="legend.del"><span class="cm-del">删除</span> &nbsp;<code>{-- --}</code></span>
+    <span data-i18n="legend.repl"><span class="cm-del">旧</span><span class="cm-ins">新</span> 替换 &nbsp;<code>{~&gt; &nbsp;~~}</code></span>
+    <span data-i18n="legend.hi"><span class="cm-hi">高亮</span> &nbsp;<code>{== ==}</code></span>
+    <span data-i18n="legend.cm">评论 <span class="cm-cm" title="评论">!</span> &nbsp;<code>{&gt;&gt; &lt;&lt;}</code></span>
   </div>
 </div>
 
 <section id="workflow">
   <div class="wrap">
-    <div class="kicker"><span class="num">01 — 工作流</span><span class="ln"></span></div>
-    <h2>读 → 批 → 交给 AI 改，闭环。</h2>
-    <p class="sub">尤其适合审阅 AI 生成的 Markdown：打开文件或直接粘贴剪贴板内容（⌘N），标出问题，让 AI 据此重写。</p>
+    <div class="kicker"><span class="num" data-i18n="wf.kicker">01 — 工作流</span><span class="ln"></span></div>
+    <h2 data-i18n="wf.h2">读 → 批 → 交给 AI 改，闭环。</h2>
+    <p class="sub" data-i18n="wf.sub">尤其适合审阅 AI 生成的 Markdown：打开文件或直接粘贴剪贴板内容（⌘N），标出问题，让 AI 据此重写。</p>
     <div class="steps">
       <div class="step">
         <div class="n">01</div>
-        <h4>安静地读</h4>
-        <p>三栏布局：目录树 + 渲染视图 + 大纲。cmark-gfm 渲染，代码高亮、图表、公式一应俱全。</p>
-        <div class="tag">// 不是编辑器，是阅读器</div>
+        <h4 data-i18n="step1.h4">安静地读</h4>
+        <p data-i18n="step1.p">三栏布局：目录树 + 渲染视图 + 大纲。cmark-gfm 渲染，代码高亮、图表、公式一应俱全。</p>
+        <div class="tag" data-i18n="step1.tag">// 不是编辑器，是阅读器</div>
       </div>
       <div class="step">
         <div class="n">02</div>
-        <h4>边读边批</h4>
-        <p>在渲染好的文字上选中即可：删除、替换、高亮、加评论。标记以 CriticMarkup 写回原文，标注列表面板分组管理、勾选导出。</p>
-        <div class="tag">// 选词 → 浮动工具条</div>
+        <h4 data-i18n="step2.h4">边读边批</h4>
+        <p data-i18n="step2.p">在渲染好的文字上选中即可：删除、替换、高亮、加评论。标记以 CriticMarkup 写回原文，标注列表面板分组管理、勾选导出。</p>
+        <div class="tag" data-i18n="step2.tag">// 选词 → 浮动工具条</div>
       </div>
       <div class="step">
         <div class="n">03</div>
-        <h4>一键交给 AI</h4>
-        <p>复制带标记的全文（附可自定义的提示词模板），长文也可只复制有改动的标注片段。改完回来一键应用或放弃全部标注。</p>
-        <div class="tag">// ⌘ 复制给 AI</div>
+        <h4 data-i18n="step3.h4">一键交给 AI</h4>
+        <p data-i18n="step3.p">复制带标记的全文（附可自定义的提示词模板），长文也可只复制有改动的标注片段。改完回来一键应用或放弃全部标注。</p>
+        <div class="tag" data-i18n="step3.tag">// ⌘ 复制给 AI</div>
       </div>
     </div>
   </div>
@@ -305,16 +311,16 @@ footer a:hover{color:var(--red-ink)}
 
 <section id="features" style="background:var(--paper-2);border-block:1px solid var(--line)">
   <div class="wrap">
-    <div class="kicker"><span class="num">02 — 特性</span><span class="ln"></span></div>
-    <h2>忠实地渲染，轻巧地标注。</h2>
-    <p class="sub">原生、极小、即开即读——把复杂留给底层，把安静留给你。</p>
+    <div class="kicker"><span class="num" data-i18n="ft.kicker">02 — 特性</span><span class="ln"></span></div>
+    <h2 data-i18n="ft.h2">忠实地渲染，轻巧地标注。</h2>
+    <p class="sub" data-i18n="ft.sub">原生、极小、即开即读——把复杂留给底层，把安静留给你。</p>
     <div class="grid">
-      <div class="feat"><div class="ic k">¶</div><h4>忠实渲染</h4><p>Mermaid 图表、KaTeX 公式、30+ 语言代码高亮、表格脚注，关闭智能排版，与源码一字不差。</p></div>
-      <div class="feat"><div class="ic r">✎</div><h4>原位审阅</h4><p>在渲染视图里选词即标：删除 / 替换 / 评论 / 高亮。标注列表面板分组管理，可一键应用或放弃全部标注。</p></div>
-      <div class="feat"><div class="ic g">⧉</div><h4>复制给 AI</h4><p>带标记原文 + 可自定义提示词模板一键入剪贴板；长文只复制有改动的标注片段，省 token 不丢上下文。</p></div>
-      <div class="feat"><div class="ic k">◑</div><h4>33 套主题</h4><p>20 深色 + 13 浅色，含 Markdown Preview Enhanced 风格，可自定义配色与对比度。</p></div>
-      <div class="feat"><div class="ic k">⚡</div><h4>原生 · 极小</h4><p>Swift + WKWebView 原生构建，启动快、内存省，Universal 二进制（Intel + Apple Silicon）约 9 MB。Quick Look 预览 + 命令行打开。</p></div>
-      <div class="feat"><div class="ic r">♡</div><h4>免费 · 开源</h4><p>MIT 许可，代码全开。fork 自并致敬 davidhoo/MarkdownReader。</p></div>
+      <div class="feat"><div class="ic k">¶</div><h4 data-i18n="feat1.h4">忠实渲染</h4><p data-i18n="feat1.p">Mermaid 图表、KaTeX 公式、30+ 语言代码高亮、表格脚注，关闭智能排版，与源码一字不差。</p></div>
+      <div class="feat"><div class="ic r">✎</div><h4 data-i18n="feat2.h4">原位审阅</h4><p data-i18n="feat2.p">在渲染视图里选词即标：删除 / 替换 / 评论 / 高亮。标注列表面板分组管理，可一键应用或放弃全部标注。</p></div>
+      <div class="feat"><div class="ic g">⧉</div><h4 data-i18n="feat3.h4">复制给 AI</h4><p data-i18n="feat3.p">带标记原文 + 可自定义提示词模板一键入剪贴板；长文只复制有改动的标注片段，省 token 不丢上下文。</p></div>
+      <div class="feat"><div class="ic k">◑</div><h4 data-i18n="feat4.h4">33 套主题</h4><p data-i18n="feat4.p">20 深色 + 13 浅色，含 Markdown Preview Enhanced 风格，可自定义配色与对比度。</p></div>
+      <div class="feat"><div class="ic k">⚡</div><h4 data-i18n="feat5.h4">原生 · 极小</h4><p data-i18n="feat5.p">Swift + WKWebView 原生构建，启动快、内存省，Universal 二进制（Intel + Apple Silicon）约 9 MB。Quick Look 预览 + 命令行打开。</p></div>
+      <div class="feat"><div class="ic r">♡</div><h4 data-i18n="feat6.h4">免费 · 开源</h4><p data-i18n="feat6.p">MIT 许可，代码全开。fork 自并致敬 davidhoo/MarkdownReader。</p></div>
     </div>
   </div>
 </section>
@@ -322,23 +328,23 @@ footer a:hover{color:var(--red-ink)}
 <section id="critic">
   <div class="wrap">
     <div class="kicker"><span class="num">03 — CriticMarkup</span><span class="ln"></span></div>
-    <h2>标准、纯文本、不锁定。</h2>
-    <p class="sub">标注用标准 <a href="http://criticmarkup.com" target="_blank" rel="noopener" style="color:var(--red-ink);text-decoration:underline">CriticMarkup</a> 语法写进 .md，任何工具都能读，任何 AI 都能懂。</p>
+    <h2 data-i18n="cr.h2">标准、纯文本、不锁定。</h2>
+    <p class="sub" data-i18n="cr.sub">标注用标准 <a href="http://criticmarkup.com" target="_blank" rel="noopener" style="color:var(--red-ink);text-decoration:underline">CriticMarkup</a> 语法写进 .md，任何工具都能读，任何 AI 都能懂。</p>
     <div class="dive">
       <div class="synx">
-        <div class="row"><div class="k">{++ ++}</div><div class="v"><span class="cm-ins">新增</span> 你想补充的内容</div></div>
-        <div class="row"><div class="k">{-- --}</div><div class="v"><span class="cm-del">删除</span> 你想去掉的内容</div></div>
-        <div class="row"><div class="k">{~~ ~&gt; ~~}</div><div class="v"><span class="cm-del">旧</span> 换成 <span class="cm-ins">新</span></div></div>
-        <div class="row"><div class="k">{== ==}</div><div class="v"><span class="cm-hi">高亮</span> 你重点关注的部分</div></div>
-        <div class="row"><div class="k">{&gt;&gt; &lt;&lt;}</div><div class="v">附一条评论 <span class="cm-cm" title="评论">!</span> 给 AI 看</div></div>
+        <div class="row"><div class="k">{++ ++}</div><div class="v" data-i18n="cr.row1"><span class="cm-ins">新增</span> 你想补充的内容</div></div>
+        <div class="row"><div class="k">{-- --}</div><div class="v" data-i18n="cr.row2"><span class="cm-del">删除</span> 你想去掉的内容</div></div>
+        <div class="row"><div class="k">{~~ ~&gt; ~~}</div><div class="v" data-i18n="cr.row3"><span class="cm-del">旧</span> 换成 <span class="cm-ins">新</span></div></div>
+        <div class="row"><div class="k">{== ==}</div><div class="v" data-i18n="cr.row4"><span class="cm-hi">高亮</span> 你重点关注的部分</div></div>
+        <div class="row"><div class="k">{&gt;&gt; &lt;&lt;}</div><div class="v" data-i18n="cr.row5">附一条评论 <span class="cm-cm" title="评论">!</span> 给 AI 看</div></div>
       </div>
       <div class="aiout">
         <span class="lbl">COPY FOR AI</span>
-        <div class="bar">▌ 粘贴给任意大模型即可</div>
-        请理解下面的 CriticMarkup 标注并据此修订：<br><br>
+        <div class="bar" data-i18n="cr.aiout.bar">▌ 粘贴给任意大模型即可</div>
+        <div data-i18n="cr.aiout.body">请理解下面的 CriticMarkup 标注并据此修订：<br><br>
         本方案将性能提升<span class="c-cm">{==最高 50%==}{&gt;&gt;数据来源？&lt;&lt;}</span>，<br>
         <span class="c-del">{--并修复了全部已知缺陷--}</span>，是<br>
-        <span class="c-del">{~~史上最佳版本</span> ~&gt; <span class="c-add">一次扎实的迭代~~}</span><span class="c-add">{++（补一句实测对比）++}</span>。
+        <span class="c-del">{~~史上最佳版本</span> ~&gt; <span class="c-add">一次扎实的迭代~~}</span><span class="c-add">{++（补一句实测对比）++}</span>。</div>
       </div>
     </div>
   </div>
@@ -346,14 +352,14 @@ footer a:hover{color:var(--red-ink)}
 
 <section id="changelog" style="background:var(--paper-2);border-block:1px solid var(--line)">
   <div class="wrap">
-    <div class="kicker"><span class="num">04 — 更新日志</span><span class="ln"></span></div>
-    <h2>最近更新。</h2>
-    <p class="sub">数据来自 GitHub Releases，与发布版本实时同步。</p>
+    <div class="kicker"><span class="num" data-i18n="cl.kicker">04 — 更新日志</span><span class="ln"></span></div>
+    <h2 data-i18n="cl.h2">最近更新。</h2>
+    <p class="sub" data-i18n="cl.sub">数据来自 GitHub Releases，与发布版本实时同步。</p>
     <div class="rels" id="rels">
-      <div class="rel-loading">加载更新记录…</div>
+      <div class="rel-loading" data-i18n="cl.loading">加载更新记录…</div>
     </div>
     <div class="rel-more">
-      <a class="btn ghost" href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener">查看全部版本 →</a>
+      <a class="btn ghost" href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" data-i18n="cl.more">查看全部版本 →</a>
     </div>
   </div>
 </section>
@@ -361,13 +367,13 @@ footer a:hover{color:var(--red-ink)}
 <section id="download">
   <div class="wrap">
     <div class="download">
-      <h2>把它装进你的 Dock。</h2>
-      <p class="sub">免费、开源、Universal。打开一份 Markdown，开始读。</p>
+      <h2 data-i18n="dl.h2">把它装进你的 Dock。</h2>
+      <p class="sub" data-i18n="dl.sub">免费、开源、Universal。打开一份 Markdown，开始读。</p>
       <div class="cta">
-        <a class="btn red" href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener">↓ 下载 MarkMark.dmg</a>
+        <a class="btn red" href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" data-i18n="dl.btn1">↓ 下载 MarkMark.dmg</a>
         <a class="btn ghost" href="https://github.com/easychen/markmark" target="_blank" rel="noopener">★ Star on GitHub</a>
       </div>
-      <div class="dl-note">macOS 15.0+ · Intel &amp; Apple Silicon · 已签名 + 公证，双击即用</div>
+      <div class="dl-note" data-i18n="dl.note">macOS 15.0+ · Intel &amp; Apple Silicon · 已签名 + 公证，双击即用</div>
     </div>
   </div>
 </section>
@@ -377,27 +383,202 @@ footer a:hover{color:var(--red-ink)}
     <a class="brand" href="#top"><img src="icon.png" alt="" style="width:26px;height:26px;border-radius:6px"><span>MarkMark</span></a>
     <div class="fl">
       <a href="https://github.com/easychen/markmark" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener">下载</a>
+      <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" data-i18n="footer.download">下载</a>
       <a href="http://criticmarkup.com" target="_blank" rel="noopener">CriticMarkup</a>
-      <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener">Inspired by</a>
+      <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener" data-i18n="footer.inspired">Inspired by</a>
     </div>
-    <p class="credit">MIT License · fork 自并致敬 <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener" style="text-decoration:underline">davidhoo/MarkdownReader</a>。在它基础上：下调至 macOS 15、加入 CriticMarkup 审阅与「复制给 AI」、并精简为纯「阅读 + 批注」（移除编辑功能）。</p>
+    <p class="credit" data-i18n="footer.credit">MIT License · fork 自并致敬 <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener" style="text-decoration:underline">davidhoo/MarkdownReader</a>。在它基础上：下调至 macOS 15、加入 CriticMarkup 审阅与「复制给 AI」、并精简为纯「阅读 + 批注」（移除编辑功能）。</p>
   </div>
 </footer>
 
 <script>
-// 复制给 AI 演示
-const sample = `请理解下面的 CriticMarkup 标注并据此修订，返回修订后的完整 Markdown：
+// ============ 多语言（中文 / 英文，自动切换） ============
+const I18N = {
+  zh: {
+    _lang: 'zh-CN',
+    _title: 'MarkMark — 读 Markdown，批注它，交给 AI',
+    _desc: 'MarkMark 是一个安静的原生 macOS Markdown 阅读器。读、用 CriticMarkup 批注、一键复制给 AI 修订。免费 · 开源 · macOS 15+。',
+    _toggle: 'EN',
+    'nav.workflow': '流程',
+    'nav.features': '特性',
+    'nav.changelog': '更新日志',
+    'nav.download': '下载',
+    'hero.h1': '读 Markdown，<br><span class="pen">批注</span>它，<br>交给 AI。',
+    'hero.lead': '一个安静的阅读器。在渲染好的文档上直接圈改，再一键把带审阅标记的全文复制给 AI 修订。',
+    'hero.cta.download': '↓ 下载 macOS 版',
+    'hero.cta.github': '在 GitHub 查看',
+    'hero.meta1': '<b>macOS 15+</b> · Intel &amp; Apple Silicon',
+    'hero.meta2': '<b>免费</b> · 开源 MIT',
+    'hero.meta3': '<b>Universal</b> · 约 9 MB',
+    'hero.shottag': '在渲染视图里选词即标 · 评论可查看/编辑/删除',
+    'legend.ins': '<span class="cm-ins">新增</span> &nbsp;<code>{++ ++}</code>',
+    'legend.del': '<span class="cm-del">删除</span> &nbsp;<code>{-- --}</code>',
+    'legend.repl': '<span class="cm-del">旧</span><span class="cm-ins">新</span> 替换 &nbsp;<code>{~&gt; &nbsp;~~}</code>',
+    'legend.hi': '<span class="cm-hi">高亮</span> &nbsp;<code>{== ==}</code>',
+    'legend.cm': '评论 <span class="cm-cm" title="评论">!</span> &nbsp;<code>{&gt;&gt; &lt;&lt;}</code>',
+    'wf.kicker': '01 — 工作流',
+    'wf.h2': '读 → 批 → 交给 AI 改，闭环。',
+    'wf.sub': '尤其适合审阅 AI 生成的 Markdown：打开文件或直接粘贴剪贴板内容（⌘N），标出问题，让 AI 据此重写。',
+    'step1.h4': '安静地读',
+    'step1.p': '三栏布局：目录树 + 渲染视图 + 大纲。cmark-gfm 渲染，代码高亮、图表、公式一应俱全。',
+    'step1.tag': '// 不是编辑器，是阅读器',
+    'step2.h4': '边读边批',
+    'step2.p': '在渲染好的文字上选中即可：删除、替换、高亮、加评论。标记以 CriticMarkup 写回原文，标注列表面板分组管理、勾选导出。',
+    'step2.tag': '// 选词 → 浮动工具条',
+    'step3.h4': '一键交给 AI',
+    'step3.p': '复制带标记的全文（附可自定义的提示词模板），长文也可只复制有改动的标注片段。改完回来一键应用或放弃全部标注。',
+    'step3.tag': '// ⌘ 复制给 AI',
+    'ft.kicker': '02 — 特性',
+    'ft.h2': '忠实地渲染，轻巧地标注。',
+    'ft.sub': '原生、极小、即开即读——把复杂留给底层，把安静留给你。',
+    'feat1.h4': '忠实渲染',
+    'feat1.p': 'Mermaid 图表、KaTeX 公式、30+ 语言代码高亮、表格脚注，关闭智能排版，与源码一字不差。',
+    'feat2.h4': '原位审阅',
+    'feat2.p': '在渲染视图里选词即标：删除 / 替换 / 评论 / 高亮。标注列表面板分组管理，可一键应用或放弃全部标注。',
+    'feat3.h4': '复制给 AI',
+    'feat3.p': '带标记原文 + 可自定义提示词模板一键入剪贴板；长文只复制有改动的标注片段，省 token 不丢上下文。',
+    'feat4.h4': '33 套主题',
+    'feat4.p': '20 深色 + 13 浅色，含 Markdown Preview Enhanced 风格，可自定义配色与对比度。',
+    'feat5.h4': '原生 · 极小',
+    'feat5.p': 'Swift + WKWebView 原生构建，启动快、内存省，Universal 二进制（Intel + Apple Silicon）约 9 MB。Quick Look 预览 + 命令行打开。',
+    'feat6.h4': '免费 · 开源',
+    'feat6.p': 'MIT 许可，代码全开。fork 自并致敬 davidhoo/MarkdownReader。',
+    'cr.h2': '标准、纯文本、不锁定。',
+    'cr.sub': '标注用标准 <a href="http://criticmarkup.com" target="_blank" rel="noopener" style="color:var(--red-ink);text-decoration:underline">CriticMarkup</a> 语法写进 .md，任何工具都能读，任何 AI 都能懂。',
+    'cr.row1': '<span class="cm-ins">新增</span> 你想补充的内容',
+    'cr.row2': '<span class="cm-del">删除</span> 你想去掉的内容',
+    'cr.row3': '<span class="cm-del">旧</span> 换成 <span class="cm-ins">新</span>',
+    'cr.row4': '<span class="cm-hi">高亮</span> 你重点关注的部分',
+    'cr.row5': '附一条评论 <span class="cm-cm" title="评论">!</span> 给 AI 看',
+    'cr.aiout.bar': '▌ 粘贴给任意大模型即可',
+    'cr.aiout.body': '请理解下面的 CriticMarkup 标注并据此修订：<br><br>\n        本方案将性能提升<span class="c-cm">{==最高 50%==}{&gt;&gt;数据来源？&lt;&lt;}</span>，<br>\n        <span class="c-del">{--并修复了全部已知缺陷--}</span>，是<br>\n        <span class="c-del">{~~史上最佳版本</span> ~&gt; <span class="c-add">一次扎实的迭代~~}</span><span class="c-add">{++（补一句实测对比）++}</span>。',
+    'cl.kicker': '04 — 更新日志',
+    'cl.h2': '最近更新。',
+    'cl.sub': '数据来自 GitHub Releases，与发布版本实时同步。',
+    'cl.loading': '加载更新记录…',
+    'cl.error': '加载失败 — 请前往 <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" style="text-decoration:underline">GitHub Releases</a> 查看更新记录。',
+    'cl.more': '查看全部版本 →',
+    'dl.h2': '把它装进你的 Dock。',
+    'dl.sub': '免费、开源、Universal。打开一份 Markdown，开始读。',
+    'dl.btn1': '↓ 下载 MarkMark.dmg',
+    'dl.note': 'macOS 15.0+ · Intel &amp; Apple Silicon · 已签名 + 公证，双击即用',
+    'footer.download': '下载',
+    'footer.inspired': 'Inspired by',
+    'footer.credit': 'MIT License · fork 自并致敬 <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener" style="text-decoration:underline">davidhoo/MarkdownReader</a>。在它基础上：下调至 macOS 15、加入 CriticMarkup 审阅与「复制给 AI」、并精简为纯「阅读 + 批注」（移除编辑功能）。',
+  },
+  en: {
+    _lang: 'en',
+    _title: 'MarkMark — Read Markdown, annotate it, hand it to AI',
+    _desc: 'MarkMark is a quiet native macOS Markdown reader. Read, annotate with CriticMarkup, and copy to an AI for revision in one click. Free · open source · macOS 15+.',
+    _toggle: '中文',
+    'nav.workflow': 'Workflow',
+    'nav.features': 'Features',
+    'nav.changelog': 'Changelog',
+    'nav.download': 'Download',
+    'hero.h1': 'Read Markdown,<br><span class="pen">annotate</span> it,<br>hand it to AI.',
+    'hero.lead': 'A quiet reader. Mark up the rendered document in place, then copy the fully-annotated text to an AI for revision — in one click.',
+    'hero.cta.download': '↓ Download for macOS',
+    'hero.cta.github': 'View on GitHub',
+    'hero.meta1': '<b>macOS 15+</b> · Intel &amp; Apple Silicon',
+    'hero.meta2': '<b>Free</b> · Open source (MIT)',
+    'hero.meta3': '<b>Universal</b> · ~9 MB',
+    'hero.shottag': 'Select text in the rendered view to annotate · comments can be viewed / edited / deleted',
+    'legend.ins': '<span class="cm-ins">Insert</span> &nbsp;<code>{++ ++}</code>',
+    'legend.del': '<span class="cm-del">Delete</span> &nbsp;<code>{-- --}</code>',
+    'legend.repl': '<span class="cm-del">old</span><span class="cm-ins">new</span> Replace &nbsp;<code>{~&gt; &nbsp;~~}</code>',
+    'legend.hi': '<span class="cm-hi">Highlight</span> &nbsp;<code>{== ==}</code>',
+    'legend.cm': 'Comment <span class="cm-cm" title="comment">!</span> &nbsp;<code>{&gt;&gt; &lt;&lt;}</code>',
+    'wf.kicker': '01 — Workflow',
+    'wf.h2': 'Read → annotate → hand to AI. A closed loop.',
+    'wf.sub': 'Especially good for reviewing AI-generated Markdown: open a file or paste clipboard content (⌘N), mark the issues, and let the AI rewrite accordingly.',
+    'step1.h4': 'Read quietly',
+    'step1.p': 'Three-pane layout: file tree + rendered view + outline. cmark-gfm rendering with code highlighting, diagrams, and formulas — all included.',
+    'step1.tag': '// Not an editor, a reader',
+    'step2.h4': 'Annotate as you read',
+    'step2.p': 'Just select text in the rendered document: delete, replace, highlight, comment. Marks are written back as CriticMarkup; the annotation panel groups them for selective export.',
+    'step2.tag': '// Select → floating toolbar',
+    'step3.h4': 'Hand to AI in one click',
+    'step3.p': 'Copy the fully-marked text (with a customizable prompt template); for long docs, copy only the changed annotation snippets. When done, apply or discard all annotations in one click.',
+    'step3.tag': '// ⌘ Copy for AI',
+    'ft.kicker': '02 — Features',
+    'ft.h2': 'Faithful rendering, lightweight annotation.',
+    'ft.sub': 'Native, tiny, instant — complexity underneath, quiet for you.',
+    'feat1.h4': 'Faithful rendering',
+    'feat1.p': 'Mermaid diagrams, KaTeX formulas, 30+ language code highlighting, tables and footnotes — smart typography off, character-for-character faithful to the source.',
+    'feat2.h4': 'In-place review',
+    'feat2.p': 'Select text in the rendered view to annotate: delete / replace / comment / highlight. The annotation panel groups them; apply or discard all in one click.',
+    'feat3.h4': 'Copy for AI',
+    'feat3.p': 'Marked-up text plus a customizable prompt template, copied in one click; for long docs, copy only the changed snippets — saving tokens without losing context.',
+    'feat4.h4': '33 themes',
+    'feat4.p': '20 dark + 13 light, including Markdown Preview Enhanced styles, with customizable colors and contrast.',
+    'feat5.h4': 'Native · tiny',
+    'feat5.p': 'Built natively with Swift + WKWebView — fast launch, low memory, Universal binary (Intel + Apple Silicon) at ~9 MB. Quick Look preview + command-line open.',
+    'feat6.h4': 'Free · open source',
+    'feat6.p': 'MIT licensed, fully open. Forked from and in tribute to davidhoo/MarkdownReader.',
+    'cr.h2': 'Standard, plain text, no lock-in.',
+    'cr.sub': 'Annotations are written into .md using standard <a href="http://criticmarkup.com" target="_blank" rel="noopener" style="color:var(--red-ink);text-decoration:underline">CriticMarkup</a> syntax — any tool can read them, any AI can understand them.',
+    'cr.row1': '<span class="cm-ins">Insert</span> what you want to add',
+    'cr.row2': '<span class="cm-del">Delete</span> what you want to remove',
+    'cr.row3': '<span class="cm-del">old</span> becomes <span class="cm-ins">new</span>',
+    'cr.row4': '<span class="cm-hi">Highlight</span> what you want to focus on',
+    'cr.row5': 'Attach a comment <span class="cm-cm" title="comment">!</span> for the AI',
+    'cr.aiout.bar': '▌ Paste into any LLM',
+    'cr.aiout.body': 'Understand the CriticMarkup annotations below and revise accordingly:<br><br>\n        This release boosts performance <span class="c-cm">{==by up to 50%==}{&gt;&gt;source?&lt;&lt;}</span><br>\n        <span class="c-del">{--and fixes every known defect--}</span> — it is<br>\n        <span class="c-del">{~~the best version ever</span> ~&gt; <span class="c-add">a solid iteration~~}</span><span class="c-add">{++ (add a real-world benchmark)++}</span>.',
+    'cl.kicker': '04 — Changelog',
+    'cl.h2': 'Latest updates.',
+    'cl.sub': 'Pulled from GitHub Releases, in sync with published versions.',
+    'cl.loading': 'Loading release notes…',
+    'cl.error': 'Failed to load — visit <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" style="text-decoration:underline">GitHub Releases</a> for the changelog.',
+    'cl.more': 'View all releases →',
+    'dl.h2': 'Put it in your Dock.',
+    'dl.sub': 'Free, open source, Universal. Open a Markdown file and start reading.',
+    'dl.btn1': '↓ Download MarkMark.dmg',
+    'dl.note': 'macOS 15.0+ · Intel &amp; Apple Silicon · signed + notarized, double-click to run',
+    'footer.download': 'Download',
+    'footer.inspired': 'Inspired by',
+    'footer.credit': 'MIT License · forked from and in tribute to <a href="https://github.com/davidhoo/MarkdownReader" target="_blank" rel="noopener" style="text-decoration:underline">davidhoo/MarkdownReader</a>. On top of it: lowered to macOS 15, added CriticMarkup review and “Copy for AI”, and trimmed it to pure “read + annotate” (editing removed).',
+  }
+};
 
-本方案将性能提升{==最高 50%==}{>>数据来源？请补充<<}，{--并修复了全部已知缺陷--}，是{~~史上最佳版本~>一次扎实的迭代~~}{++（建议补一句实测对比）++}。`;
-const btn = document.getElementById('copybtn');
-btn && btn.addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(sample); } catch (e) {}
-  btn.textContent = '✓ 已复制';
-  btn.classList.add('ok');
-  setTimeout(() => { btn.textContent = '⧉ 复制给 AI'; btn.classList.remove('ok'); }, 1600);
-});
-// 更新日志：从 GitHub Releases 拉取最近版本（与发布实时同步，无需手动维护）
+const LANG_KEY = 'markmark-lang';
+let currentLang = (() => {
+  const saved = localStorage.getItem(LANG_KEY);
+  if (saved === 'zh' || saved === 'en') return saved;
+  return (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+})();
+
+function t(key) {
+  const dict = I18N[currentLang] || I18N.en;
+  return key in dict ? dict[key] : (I18N.en[key] || '');
+}
+
+function applyLang(lang) {
+  currentLang = (lang === 'zh' || lang === 'en') ? lang : 'en';
+  const dict = I18N[currentLang];
+  document.documentElement.lang = dict._lang;
+  document.title = dict._title;
+  const descEl = document.querySelector('meta[name="description"]');
+  if (descEl) descEl.setAttribute('content', dict._desc);
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (key in dict) el.innerHTML = dict[key];
+  });
+  const toggle = document.getElementById('langToggle');
+  if (toggle) toggle.textContent = dict._toggle;
+  localStorage.setItem(LANG_KEY, currentLang);
+}
+
+(function initLang() {
+  applyLang(currentLang);
+  const toggle = document.getElementById('langToggle');
+  if (toggle) {
+    const flip = () => applyLang(currentLang === 'zh' ? 'en' : 'zh');
+    toggle.addEventListener('click', flip);
+    toggle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+  }
+})();
+
+// ============ 更新日志：从 GitHub Releases 拉取最近版本 ============
 (async () => {
   const box = document.getElementById('rels');
   if (!box) return;
@@ -421,7 +602,8 @@ btn && btn.addEventListener('click', async () => {
       if (cat) {
         closeList();
         const name = cat[1].trim();
-        const cls = name.includes('新增') ? ' class="cat-add"' : name.includes('修复') ? ' class="cat-fix"' : '';
+        const cls = (name.includes('新增') || /add/i.test(name)) ? ' class="cat-add"'
+                  : (name.includes('修复') || /fix/i.test(name)) ? ' class="cat-fix"' : '';
         html += `<h5${cls}>${esc(name)}</h5>`;
       } else if (item) {
         if (!inList) { html += '<ul>'; inList = true; }
@@ -452,7 +634,7 @@ btn && btn.addEventListener('click', async () => {
         ${renderBody(r.body)}
       </div>`).join('');
   } catch (e) {
-    box.innerHTML = '<div class="rel-loading">加载失败 — 请前往 <a href="https://github.com/easychen/markmark/releases" target="_blank" rel="noopener" style="text-decoration:underline">GitHub Releases</a> 查看更新记录。</div>';
+    box.innerHTML = `<div class="rel-loading">${t('cl.error')}</div>`;
   }
 })();
 

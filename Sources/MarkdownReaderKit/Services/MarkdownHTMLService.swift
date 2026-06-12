@@ -91,7 +91,7 @@ public enum MarkdownHTMLService {
         """
     }
 
-    public static func buildContentAwareHTML(content: String, themeCSS: String, contentPadding: CGFloat, baseURL: URL?, isDark: Bool, hasMermaid: Bool, hasKaTeX: Bool, inlineImages: Bool = false) -> String {
+    public static func buildContentAwareHTML(content: String, themeCSS: String, contentPadding: CGFloat, baseURL: URL?, isDark: Bool, hasMermaid: Bool, hasKaTeX: Bool, inlineImages: Bool = false, isQuickLook: Bool = false) -> String {
         let renderResult = inlineImages ? renderWithInlineImages(content, baseURL: baseURL) : render(content, baseURL: baseURL)
 
         let baseURLAttr = baseURL != nil ? " data-base-url=\"\(baseURL!.path.addingXMLAttributeEscapes)\"" : ""
@@ -109,7 +109,7 @@ public enum MarkdownHTMLService {
         <script>
         Prism.plugins.autoloader.languages_path = 'mr:///js/';
         </script>
-        <script src="mr:///js/markdown-reader.js" data-is-dark="\(isDark)"></script>
+        <script src="mr:///js/markdown-reader.js" data-is-dark="\(isDark)" data-is-quicklook="\(isQuickLook)"></script>
         """
 
         let katexCSS = hasKaTeX ? "<link rel=\"stylesheet\" href=\"mr:///css/katex.min.css\">\n" : ""

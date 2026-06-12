@@ -5,6 +5,17 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.0.9] - 2026-06-12
+
+### 修复
+
+- **Quick Look 预览中显示无效的标注悬浮工具条**：QuickLook 为只读沙盒环境，标注无法保存，选词时却仍弹出删除/高亮/评论/替换工具条，造成误导（#4，by @yujunhui）。现 `buildContentAwareHTML` 新增 `isQuickLook` 标记，预览时通过脚本标签传入，`markdown-reader.js` 据此跳过标注选区监听的初始化；CriticMarkup 的高亮、评论标记等渲染效果不受影响照常显示
+
+### 变更
+
+- **官网改为中英文双语**：`pages/index.html` 增加多语言方案，按浏览器语言自动选择中文 / 英文，导航栏提供一键切换并记忆选择（localStorage）
+- **README 改为中英文双语**：顶部提供语言切换锚点，英文与简体中文内容并列
+
 ## [2.0.8] - 2026-06-10
 
 ### 新增

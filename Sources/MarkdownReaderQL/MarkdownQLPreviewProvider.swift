@@ -93,7 +93,8 @@ final class MarkdownQLPreviewProvider: NSViewController, QLPreviewingController 
             isDark: isDark,
             hasMermaid: hasMermaid,
             hasKaTeX: hasKaTeX,
-            inlineImages: true
+            inlineImages: true,
+            isQuickLook: true
         )
 
         // 诊断日志：检查 HTML 中是否包含 data: URL（内联图片成功）

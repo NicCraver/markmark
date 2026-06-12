@@ -900,6 +900,10 @@
     },
 
     _initCriticSelection() {
+      // QuickLook 预览为只读环境，无法保存标注；此处直接跳过，避免出现无效的标注悬浮工具条。
+      const scriptTag = document.querySelector('script[src*="markdown-reader.js"]');
+      if (scriptTag && scriptTag.dataset.isQuicklook === 'true') return;
+
       const onSelectionChange = () => {
         // 输入态（评论/替换正在输入）时不刷新工具条
         const bar = document.getElementById('mr-critic-toolbar');
